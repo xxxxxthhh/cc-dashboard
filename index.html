@@ -5,44 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CC Strategy Dashboard</title>
 <style>
-* { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0d1117; color:#c9d1d9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:24px; }
-#lock-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; }
-#lock-screen h1 { font-size:48px; margin-bottom:24px; }
-#lock-screen input { background:#161b22; border:2px solid #30363d; border-radius:8px; color:#c9d1d9; font-size:24px; padding:12px 20px; width:200px; text-align:center; letter-spacing:8px; outline:none; }
-#lock-screen input:focus { border-color:#58a6ff; }
-#lock-screen .error { color:#f85149; font-size:13px; margin-top:8px; height:20px; }
-#dashboard { display:none; }
-h1 { color:#58a6ff; font-size:22px; margin-bottom:8px; }
-h2 { color:#8b949e; font-size:16px; margin:24px 0 12px; border-bottom:1px solid #21262d; padding-bottom:8px; }
-.subtitle { color:#8b949e; font-size:13px; margin-bottom:24px; }
-.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
-.card { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:16px; }
-.card .label { color:#8b949e; font-size:12px; margin-bottom:4px; }
-.card .value { font-size:24px; font-weight:600; }
-.card .value.green { color:#3fb950; }
-.card .value.red { color:#f85149; }
-.card .value.blue { color:#58a6ff; }
-.card .value.yellow { color:#d29922; }
-table { width:100%; border-collapse:collapse; background:#161b22; border:1px solid #21262d; border-radius:8px; overflow:hidden; margin-bottom:16px; }
-th { background:#21262d; color:#8b949e; font-size:12px; text-transform:uppercase; padding:10px 12px; text-align:left; }
-td { padding:10px 12px; border-top:1px solid #21262d; font-size:13px; }
-tr:hover { background:#1c2128; }
-.tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
-.tag-safe { background:#0d2818; color:#3fb950; }
-.tag-warn { background:#2d1b00; color:#d29922; }
-.tag-danger { background:#2d0000; color:#f85149; }
-.tag-idle { background:#1c1c1c; color:#8b949e; }
-.compare { display:grid; grid-template-columns:1fr 40px 1fr; gap:0; margin:16px 0; }
-.compare-box { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:20px; text-align:center; }
-.compare-arrow { display:flex; align-items:center; justify-content:center; font-size:24px; color:#58a6ff; }
-.compare-box .big { font-size:32px; font-weight:700; margin:8px 0; }
-.note { color:#8b949e; font-size:12px; margin-top:8px; }
-.section-note { background:#161b22; border-left:3px solid #d29922; padding:12px 16px; margin:16px 0; font-size:13px; color:#d29922; border-radius:0 8px 8px 0; }
-.opt-change { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; }
-.opt-change .action { font-weight:600; }
-.opt-change .sell { color:#f85149; }
-.opt-change .buy { color:#3fb950; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px}
+#lock-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh}
+#lock-screen h1{font-size:48px;margin-bottom:24px}
+#lock-screen input{background:#161b22;border:2px solid #30363d;border-radius:8px;color:#c9d1d9;font-size:24px;padding:12px 20px;width:200px;text-align:center;letter-spacing:8px;outline:none}
+#lock-screen input:focus{border-color:#58a6ff}
+#lock-screen .error{color:#f85149;font-size:13px;margin-top:8px;height:20px}
+#dashboard{display:none}
+h1{color:#58a6ff;font-size:22px;margin-bottom:8px}
+h2{color:#8b949e;font-size:16px;margin:24px 0 12px;border-bottom:1px solid #21262d;padding-bottom:8px}
+.subtitle{color:#8b949e;font-size:13px;margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+.card{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:16px}
+.card .label{color:#8b949e;font-size:12px;margin-bottom:4px}
+.card .value{font-size:24px;font-weight:600}
+.green{color:#3fb950}.red{color:#f85149}.blue{color:#58a6ff}.yellow{color:#d29922}
+table{width:100%;border-collapse:collapse;background:#161b22;border:1px solid #21262d;border-radius:8px;overflow:hidden;margin-bottom:16px}
+th{background:#21262d;color:#8b949e;font-size:12px;text-transform:uppercase;padding:10px 12px;text-align:left}
+td{padding:10px 12px;border-top:1px solid #21262d;font-size:13px}
+tr:hover{background:#1c2128}
+.tag{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.tag-safe{background:#0d2818;color:#3fb950}.tag-warn{background:#2d1b00;color:#d29922}.tag-danger{background:#2d0000;color:#f85149}.tag-idle{background:#1c1c1c;color:#8b949e}
+.compare{display:grid;grid-template-columns:1fr 40px 1fr;gap:0;margin:16px 0}
+.compare-box{background:#161b22;border:1px solid #21262d;border-radius:8px;padding:20px;text-align:center}
+.compare-arrow{display:flex;align-items:center;justify-content:center;font-size:24px;color:#58a6ff}
+.compare-box .big{font-size:32px;font-weight:700;margin:8px 0}
+.note{color:#8b949e;font-size:12px;margin-top:8px}
+.section-note{background:#161b22;border-left:3px solid #d29922;padding:12px 16px;margin:16px 0;font-size:13px;color:#d29922;border-radius:0 8px 8px 0}
+.opt-change{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.opt-change .action{font-weight:600}
+.sell{color:#f85149}.buy{color:#3fb950}
 </style>
 </head>
 <body>
@@ -56,214 +49,113 @@ tr:hover { background:#1c2128; }
 <div id="dashboard">
 <h1>🐴 CC Strategy Dashboard</h1>
 <p class="subtitle">Covered Call 收租年化分析 · 更新于 2026-02-18</p>
-
 <div class="grid" id="summary-cards"></div>
-
 <h2>📊 当前 CC 持仓表现</h2>
-<table id="cc-table">
-<thead><tr><th>标的</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本(100股)</th><th>单次收益率</th><th>年化收益率</th><th>状态</th></tr></thead>
-<tbody></tbody>
-</table>
-
+<table id="cc-table"><thead><tr><th>标的</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本(100股)</th><th>单次收益率</th><th>年化收益率</th><th>状态</th></tr></thead><tbody></tbody></table>
 <h2>💤 未开 CC 的仓位（闲置资金）</h2>
-<table id="idle-table">
-<thead><tr><th>标的</th><th>股数</th><th>均价</th><th>市值(成本)</th><th>可开CC</th><th>备注</th></tr></thead>
-<tbody></tbody>
-</table>
-
+<table id="idle-table"><thead><tr><th>标的</th><th>股数</th><th>均价</th><th>市值(成本)</th><th>可开CC</th><th>备注</th></tr></thead><tbody></tbody></table>
 <h2>🔄 优化方案</h2>
 <div class="section-note">卖掉零散仓位，集中到高 IV 标的（COIN），最大化 CC 收租效率</div>
 <div id="opt-changes"></div>
-
 <h2>📈 当前 vs 优化后</h2>
 <div class="compare">
-<div class="compare-box">
-<div style="color:#8b949e">当前年化收入</div>
-<div class="big" style="color:#d29922" id="current-income">—</div>
-<div style="color:#8b949e;font-size:12px" id="current-yield">—</div>
-</div>
+<div class="compare-box"><div style="color:#8b949e">当前年化收入</div><div class="big yellow" id="current-income">—</div><div style="color:#8b949e;font-size:12px" id="current-yield">—</div></div>
 <div class="compare-arrow">→</div>
-<div class="compare-box">
-<div style="color:#8b949e">优化后年化收入</div>
-<div class="big" style="color:#3fb950" id="opt-income">—</div>
-<div style="color:#8b949e;font-size:12px" id="opt-yield">—</div>
+<div class="compare-box"><div style="color:#8b949e">优化后年化收入</div><div class="big green" id="opt-income">—</div><div style="color:#8b949e;font-size:12px" id="opt-yield">—</div></div>
 </div>
-</div>
-
-<p class="note">* DTE 为估算值（基于 2/14 开仓），实际以开仓日期为准。优化后收入基于 30-45 DTE 滚动估算。</p>
+<p class="note">* DTE 为估算值，实际以开仓日期为准。优化后收入基于 30-45 DTE 滚动估算。</p>
 </div>
 
 <script>
-// Password gate
-const HASH = '5b4a23c5e3d0e34e1b9b2e3c8f7a6d5e';
-function simpleHash(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
-  return h;
+const ENC = {"salt":"9LIYVUX6uhG9N0DTZOTaWw==","iv":"zDLD3f0oTWD7Xxbs","tag":"ZEAzEUKgIVUoYsqX+NmJGw==","data":"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"};
+
+function b64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
+
+async function decrypt(pwd){
+  const enc=new TextEncoder();
+  const keyMaterial=await crypto.subtle.importKey('raw',enc.encode(pwd),{name:'PBKDF2'},false,['deriveKey']);
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(ENC.salt),iterations:100000,hash:'SHA-256'},keyMaterial,{name:'AES-GCM',length:256},false,['decrypt']);
+  const ct=b64(ENC.data);
+  const tag=b64(ENC.tag);
+  const combined=new Uint8Array(ct.length+tag.length);
+  combined.set(ct);combined.set(tag,ct.length);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(ENC.iv)},key,combined);
+  return JSON.parse(new TextDecoder().decode(plain));
 }
-document.getElementById('pwd').addEventListener('input', function() {
-  if (this.value.length === 4) {
-    if (this.value === atob('MTAyOQ==')) {
-      document.getElementById('lock-screen').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-    } else {
-      document.getElementById('pwd-error').textContent = '密码错误';
-      this.value = '';
+
+document.getElementById('pwd').addEventListener('input',async function(){
+  if(this.value.length===4){
+    try{
+      const data=await decrypt(this.value);
+      document.getElementById('lock-screen').style.display='none';
+      document.getElementById('dashboard').style.display='block';
+      render(data);
+    }catch(e){
+      document.getElementById('pwd-error').textContent='密码错误';
+      this.value='';
     }
   }
 });
-</script>
 
-<script>
-const today = new Date(2026, 1, 18);
+function fmt(n){return '$'+n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0})}
+function fmtPct(n){return n.toFixed(1)+'%'}
+function daysBetween(d1,d2){return Math.round((new Date(d2)-new Date(d1))/86400000)}
 
-const ccPositions = [
-  { ticker:'PDD', strike:104, expiry:'2026-02-20', premium:45, costPerShare:107.66, sellDate:'2026-02-14', shares:100 },
-  { ticker:'PDD', strike:108, expiry:'2026-02-27', premium:58, costPerShare:107.66, sellDate:'2026-02-14', shares:100 },
-  { ticker:'PDD', strike:112, expiry:'2026-02-20', premium:70, costPerShare:107.66, sellDate:'2026-02-13', shares:100, closed:true },
-  { ticker:'NIO', strike:5, expiry:'2026-02-20', premium:8, costPerShare:4.08, sellDate:'2026-02-14', shares:100 },
-  { ticker:'JD', strike:31, expiry:'2026-03-06', premium:42, costPerShare:31.94, sellDate:'2026-02-14', shares:100 },
-  { ticker:'LI', strike:19.5, expiry:'2026-02-27', premium:39, costPerShare:23.01, sellDate:'2026-02-14', shares:100 },
-  { ticker:'CRCL', strike:65, expiry:'2026-06-18', premium:720, costPerShare:63.60, sellDate:'2026-01-20', shares:100 },
-  { ticker:'NFLX', strike:81, expiry:'2026-03-06', premium:120, costPerShare:80.15, sellDate:'2026-02-13', shares:100 },
-];
+function render(D){
+  const today='2026-02-18';
+  const tbody=document.querySelector('#cc-table tbody');
+  let totalPA=0,totalCC=0;
 
-const idlePositions = [
-  { ticker:'NEOV', shares:100, cost:4.41, canCC:true, note:'低价股，CC权利金极低' },
-  { ticker:'COPX', shares:60, cost:84.24, canCC:false, note:'不足100股' },
-  { ticker:'COIN', shares:60, cost:160.00, canCC:false, note:'目标补到100股' },
-  { ticker:'MSTR', shares:40, cost:133.60, canCC:false, note:'不足100股，考虑换COIN' },
-  { ticker:'CRM', shares:20, cost:184.65, canCC:false, note:'不足100股' },
-  { ticker:'AMD', shares:20, cost:214.35, canCC:false, note:'不足100股' },
-  { ticker:'PYPL', shares:20, cost:42.95, canCC:false, note:'不足100股' },
-  { ticker:'AMZN', shares:10, cost:205.37, canCC:false, note:'不足100股' },
-];
+  D.ccPositions.forEach(p=>{
+    const dte=daysBetween(p.sellDate,p.expiry);
+    const cost100=p.costPerShare*100;
+    const yPer=(p.premium/cost100)*100;
+    const ann=yPer*(365/dte);
+    totalPA+=(p.premium/dte)*365;
+    totalCC+=cost100;
+    let st,sc;
+    if(p.closed){st='已平仓';sc='tag-idle'}
+    else if(ann>30){st='高收益';sc='tag-safe'}
+    else if(ann>15){st='正常';sc='tag-safe'}
+    else{st='偏低';sc='tag-warn'}
+    const dl=daysBetween(today,p.expiry);
+    if(!p.closed&&dl<=2){st='⚠️ 即将到期';sc='tag-warn'}
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><strong>${p.ticker}</strong></td><td>$${p.strike}</td><td>${p.expiry.slice(5)}</td><td>${dte}天</td><td>${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td><span class="tag ${sc}">${st}</span></td>`;
+    tbody.appendChild(tr);
+  });
 
-function daysBetween(d1, d2) {
-  return Math.round((new Date(d2) - new Date(d1)) / 86400000);
+  const itb=document.querySelector('#idle-table tbody');
+  let totalIdle=0;
+  D.idlePositions.forEach(p=>{
+    const mv=p.shares*p.cost;totalIdle+=mv;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><strong>${p.ticker}</strong></td><td>${p.shares}</td><td>$${p.cost}</td><td>${fmt(Math.round(mv))}</td><td>${p.canCC?'<span class="tag tag-safe">可以</span>':'<span class="tag tag-danger">不足100股</span>'}</td><td>${p.note}</td>`;
+    itb.appendChild(tr);
+  });
+
+  const totalCap=totalCC+totalIdle;
+  const ccCov=totalCC/totalCap*100;
+  const pYield=totalPA/totalCap*100;
+  [{label:'总持仓成本',value:fmt(Math.round(totalCap)),cls:'blue'},{label:'CC 覆盖资金',value:fmt(Math.round(totalCC)),cls:'green'},{label:'闲置资金',value:fmt(Math.round(totalIdle)),cls:'yellow'},{label:'CC 覆盖率',value:fmtPct(ccCov),cls:ccCov>60?'green':'yellow'},{label:'CC 年化收入(估)',value:fmt(Math.round(totalPA)),cls:'green'},{label:'组合年化收益率',value:fmtPct(pYield),cls:pYield>10?'green':'yellow'}].forEach(c=>{
+    const d=document.createElement('div');d.className='card';
+    d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>`;
+    document.getElementById('summary-cards').appendChild(d);
+  });
+
+  D.optChanges.forEach(c=>{
+    const d=document.createElement('div');d.className='opt-change';
+    d.innerHTML=`<span class="action ${c.cls}">${c.action}</span> ${c.detail}`;
+    document.getElementById('opt-changes').appendChild(d);
+  });
+
+  const optAI=D.optEstimates.reduce((s,e)=>s+e.monthlyPremium*12,0);
+  const optTC=D.optEstimates.reduce((s,e)=>s+e.cost,0);
+  document.getElementById('current-income').textContent=fmt(Math.round(totalPA));
+  document.getElementById('current-yield').textContent='组合年化 '+fmtPct(pYield);
+  document.getElementById('opt-income').textContent=fmt(optAI);
+  document.getElementById('opt-yield').textContent='组合年化 '+fmtPct(optAI/optTC*100);
 }
-
-function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
-function fmtPct(n) { return n.toFixed(1) + '%'; }
-
-// Calculate CC table
-const tbody = document.querySelector('#cc-table tbody');
-let totalPremiumAnnualized = 0;
-let totalCCCapital = 0;
-
-ccPositions.forEach(p => {
-  const dte = daysBetween(p.sellDate, p.expiry);
-  const cost100 = p.costPerShare * 100;
-  const yieldPer = (p.premium / cost100) * 100;
-  const annualized = yieldPer * (365 / dte);
-  
-  totalPremiumAnnualized += (p.premium / dte) * 365;
-  totalCCCapital += cost100;
-
-  let status, statusClass;
-  if (p.closed) { status = '已平仓'; statusClass = 'tag-idle'; }
-  else if (annualized > 30) { status = '高收益'; statusClass = 'tag-safe'; }
-  else if (annualized > 15) { status = '正常'; statusClass = 'tag-safe'; }
-  else { status = '偏低'; statusClass = 'tag-warn'; }
-
-  const daysLeft = daysBetween(today.toISOString().slice(0,10), p.expiry);
-  if (!p.closed && daysLeft <= 2) { status = '⚠️ 即将到期'; statusClass = 'tag-warn'; }
-
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><strong>${p.ticker}</strong></td>
-    <td>$${p.strike}</td>
-    <td>${p.expiry.slice(5)}</td>
-    <td>${dte}天</td>
-    <td>${fmt(p.premium)}</td>
-    <td>${fmt(Math.round(cost100))}</td>
-    <td>${fmtPct(yieldPer)}</td>
-    <td><strong>${fmtPct(annualized)}</strong></td>
-    <td><span class="tag ${statusClass}">${status}</span></td>
-  `;
-  tbody.appendChild(tr);
-});
-
-// Idle positions
-const idleTbody = document.querySelector('#idle-table tbody');
-let totalIdleCapital = 0;
-idlePositions.forEach(p => {
-  const mv = p.shares * p.cost;
-  totalIdleCapital += mv;
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><strong>${p.ticker}</strong></td>
-    <td>${p.shares}</td>
-    <td>$${p.cost}</td>
-    <td>${fmt(Math.round(mv))}</td>
-    <td>${p.canCC ? '<span class="tag tag-safe">可以</span>' : '<span class="tag tag-danger">不足100股</span>'}</td>
-    <td>${p.note}</td>
-  `;
-  idleTbody.appendChild(tr);
-});
-
-// Summary cards
-const totalCapital = totalCCCapital + totalIdleCapital;
-const ccCoverage = (totalCCCapital / totalCapital * 100);
-const portfolioYield = (totalPremiumAnnualized / totalCapital * 100);
-const ccOnlyYield = (totalPremiumAnnualized / totalCCCapital * 100);
-
-const cards = [
-  { label:'总持仓成本', value: fmt(Math.round(totalCapital)), cls:'blue' },
-  { label:'CC 覆盖资金', value: fmt(Math.round(totalCCCapital)), cls:'green' },
-  { label:'闲置资金', value: fmt(Math.round(totalIdleCapital)), cls:'yellow' },
-  { label:'CC 覆盖率', value: fmtPct(ccCoverage), cls: ccCoverage > 60 ? 'green' : 'yellow' },
-  { label:'CC 年化收入(估)', value: fmt(Math.round(totalPremiumAnnualized)), cls:'green' },
-  { label:'组合年化收益率', value: fmtPct(portfolioYield), cls: portfolioYield > 10 ? 'green' : 'yellow' },
-];
-
-const grid = document.getElementById('summary-cards');
-cards.forEach(c => {
-  const div = document.createElement('div');
-  div.className = 'card';
-  div.innerHTML = `<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>`;
-  grid.appendChild(div);
-});
-
-// Optimization plan
-const optChanges = [
-  { action:'卖出', cls:'sell', detail:'CRM 20股 (~$3,693)' },
-  { action:'卖出', cls:'sell', detail:'AMD 20股 (~$4,287)' },
-  { action:'卖出', cls:'sell', detail:'PYPL 20股 (~$859)' },
-  { action:'卖出', cls:'sell', detail:'AMZN 10股 (~$2,054)' },
-  { action:'卖出', cls:'sell', detail:'NEOV 100股 (~$441)' },
-  { action:'卖出', cls:'sell', detail:'COPX 60股 (~$5,054)' },
-  { action:'卖出', cls:'sell', detail:'MSTR 40股 (~$5,344)' },
-  { action:'买入', cls:'buy', detail:'COIN 40股 @ ~$150 (~$6,000)，补到100股开CC' },
-];
-
-const optDiv = document.getElementById('opt-changes');
-optChanges.forEach(c => {
-  const d = document.createElement('div');
-  d.className = 'opt-change';
-  d.innerHTML = `<span class="action ${c.cls}">${c.action}</span> ${c.detail}`;
-  optDiv.appendChild(d);
-});
-
-// Optimized projection
-// After optimization: PDD 200, COIN 100, CRCL 110, NFLX 100, JD 100 (clearing), LI 100 (clearing), NIO 100 (clearing)
-// Core CC positions: PDD, COIN, CRCL, NFLX
-// Estimated monthly CC income (30-45 DTE):
-const optEstimates = [
-  { ticker:'PDD', shares:200, contracts:2, monthlyPremium:120, cost:107.66*200 },   // ~$60/contract/month
-  { ticker:'COIN', shares:100, contracts:1, monthlyPremium:800, cost:155*100 },      // High IV, ~$800/month
-  { ticker:'CRCL', shares:100, contracts:1, monthlyPremium:200, cost:63.60*100 },    // ~$200/month at 30-45 DTE
-  { ticker:'NFLX', shares:100, contracts:1, monthlyPremium:150, cost:80.15*100 },    // ~$150/month
-];
-
-const optAnnualIncome = optEstimates.reduce((s,e) => s + e.monthlyPremium * 12, 0);
-const optTotalCost = optEstimates.reduce((s,e) => s + e.cost, 0);
-const optYield = (optAnnualIncome / optTotalCost * 100);
-
-document.getElementById('current-income').textContent = fmt(Math.round(totalPremiumAnnualized));
-document.getElementById('current-yield').textContent = '组合年化 ' + fmtPct(portfolioYield);
-document.getElementById('opt-income').textContent = fmt(optAnnualIncome);
-document.getElementById('opt-yield').textContent = '组合年化 ' + fmtPct(optYield);
 </script>
 </body>
 </html>
