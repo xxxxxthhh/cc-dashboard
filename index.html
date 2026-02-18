@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CC Strategy Dashboard</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d1117; color:#c9d1d9; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; padding:24px; }
+#lock-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; height:80vh; }
+#lock-screen h1 { font-size:48px; margin-bottom:24px; }
+#lock-screen input { background:#161b22; border:2px solid #30363d; border-radius:8px; color:#c9d1d9; font-size:24px; padding:12px 20px; width:200px; text-align:center; letter-spacing:8px; outline:none; }
+#lock-screen input:focus { border-color:#58a6ff; }
+#lock-screen .error { color:#f85149; font-size:13px; margin-top:8px; height:20px; }
+#dashboard { display:none; }
+h1 { color:#58a6ff; font-size:22px; margin-bottom:8px; }
+h2 { color:#8b949e; font-size:16px; margin:24px 0 12px; border-bottom:1px solid #21262d; padding-bottom:8px; }
+.subtitle { color:#8b949e; font-size:13px; margin-bottom:24px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+.card { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:16px; }
+.card .label { color:#8b949e; font-size:12px; margin-bottom:4px; }
+.card .value { font-size:24px; font-weight:600; }
+.card .value.green { color:#3fb950; }
+.card .value.red { color:#f85149; }
+.card .value.blue { color:#58a6ff; }
+.card .value.yellow { color:#d29922; }
+table { width:100%; border-collapse:collapse; background:#161b22; border:1px solid #21262d; border-radius:8px; overflow:hidden; margin-bottom:16px; }
+th { background:#21262d; color:#8b949e; font-size:12px; text-transform:uppercase; padding:10px 12px; text-align:left; }
+td { padding:10px 12px; border-top:1px solid #21262d; font-size:13px; }
+tr:hover { background:#1c2128; }
+.tag { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:600; }
+.tag-safe { background:#0d2818; color:#3fb950; }
+.tag-warn { background:#2d1b00; color:#d29922; }
+.tag-danger { background:#2d0000; color:#f85149; }
+.tag-idle { background:#1c1c1c; color:#8b949e; }
+.compare { display:grid; grid-template-columns:1fr 40px 1fr; gap:0; margin:16px 0; }
+.compare-box { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:20px; text-align:center; }
+.compare-arrow { display:flex; align-items:center; justify-content:center; font-size:24px; color:#58a6ff; }
+.compare-box .big { font-size:32px; font-weight:700; margin:8px 0; }
+.note { color:#8b949e; font-size:12px; margin-top:8px; }
+.section-note { background:#161b22; border-left:3px solid #d29922; padding:12px 16px; margin:16px 0; font-size:13px; color:#d29922; border-radius:0 8px 8px 0; }
+.opt-change { display:flex; align-items:center; gap:8px; padding:6px 0; font-size:13px; }
+.opt-change .action { font-weight:600; }
+.opt-change .sell { color:#f85149; }
+.opt-change .buy { color:#3fb950; }
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+<h1>🔒</h1>
+<input type="password" id="pwd" maxlength="4" placeholder="····" autofocus>
+<div class="error" id="pwd-error"></div>
+</div>
+
+<div id="dashboard">
+<h1>🐴 CC Strategy Dashboard</h1>
+<p class="subtitle">Covered Call 收租年化分析 · 更新于 2026-02-18</p>
+
+<div class="grid" id="summary-cards"></div>
+
+<h2>📊 当前 CC 持仓表现</h2>
+<table id="cc-table">
+<thead><tr><th>标的</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本(100股)</th><th>单次收益率</th><th>年化收益率</th><th>状态</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<h2>💤 未开 CC 的仓位（闲置资金）</h2>
+<table id="idle-table">
+<thead><tr><th>标的</th><th>股数</th><th>均价</th><th>市值(成本)</th><th>可开CC</th><th>备注</th></tr></thead>
+<tbody></tbody>
+</table>
+
+<h2>🔄 优化方案</h2>
+<div class="section-note">卖掉零散仓位，集中到高 IV 标的（COIN），最大化 CC 收租效率</div>
+<div id="opt-changes"></div>
+
+<h2>📈 当前 vs 优化后</h2>
+<div class="compare">
+<div class="compare-box">
+<div style="color:#8b949e">当前年化收入</div>
+<div class="big" style="color:#d29922" id="current-income">—</div>
+<div style="color:#8b949e;font-size:12px" id="current-yield">—</div>
+</div>
+<div class="compare-arrow">→</div>
+<div class="compare-box">
+<div style="color:#8b949e">优化后年化收入</div>
+<div class="big" style="color:#3fb950" id="opt-income">—</div>
+<div style="color:#8b949e;font-size:12px" id="opt-yield">—</div>
+</div>
+</div>
+
+<p class="note">* DTE 为估算值（基于 2/14 开仓），实际以开仓日期为准。优化后收入基于 30-45 DTE 滚动估算。</p>
+</div>
+
+<script>
+// Password gate
+const HASH = '5b4a23c5e3d0e34e1b9b2e3c8f7a6d5e';
+function simpleHash(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+  return h;
+}
+document.getElementById('pwd').addEventListener('input', function() {
+  if (this.value.length === 4) {
+    if (this.value === atob('MTAyOQ==')) {
+      document.getElementById('lock-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+    } else {
+      document.getElementById('pwd-error').textContent = '密码错误';
+      this.value = '';
+    }
+  }
+});
+</script>
+
+<script>
+const today = new Date(2026, 1, 18);
+
+const ccPositions = [
+  { ticker:'PDD', strike:104, expiry:'2026-02-20', premium:45, costPerShare:107.66, sellDate:'2026-02-14', shares:100 },
+  { ticker:'PDD', strike:108, expiry:'2026-02-27', premium:58, costPerShare:107.66, sellDate:'2026-02-14', shares:100 },
+  { ticker:'PDD', strike:112, expiry:'2026-02-20', premium:70, costPerShare:107.66, sellDate:'2026-02-13', shares:100, closed:true },
+  { ticker:'NIO', strike:5, expiry:'2026-02-20', premium:8, costPerShare:4.08, sellDate:'2026-02-14', shares:100 },
+  { ticker:'JD', strike:31, expiry:'2026-03-06', premium:42, costPerShare:31.94, sellDate:'2026-02-14', shares:100 },
+  { ticker:'LI', strike:19.5, expiry:'2026-02-27', premium:39, costPerShare:23.01, sellDate:'2026-02-14', shares:100 },
+  { ticker:'CRCL', strike:65, expiry:'2026-06-18', premium:720, costPerShare:63.60, sellDate:'2026-01-20', shares:100 },
+  { ticker:'NFLX', strike:81, expiry:'2026-03-06', premium:120, costPerShare:80.15, sellDate:'2026-02-13', shares:100 },
+];
+
+const idlePositions = [
+  { ticker:'NEOV', shares:100, cost:4.41, canCC:true, note:'低价股，CC权利金极低' },
+  { ticker:'COPX', shares:60, cost:84.24, canCC:false, note:'不足100股' },
+  { ticker:'COIN', shares:60, cost:160.00, canCC:false, note:'目标补到100股' },
+  { ticker:'MSTR', shares:40, cost:133.60, canCC:false, note:'不足100股，考虑换COIN' },
+  { ticker:'CRM', shares:20, cost:184.65, canCC:false, note:'不足100股' },
+  { ticker:'AMD', shares:20, cost:214.35, canCC:false, note:'不足100股' },
+  { ticker:'PYPL', shares:20, cost:42.95, canCC:false, note:'不足100股' },
+  { ticker:'AMZN', shares:10, cost:205.37, canCC:false, note:'不足100股' },
+];
+
+function daysBetween(d1, d2) {
+  return Math.round((new Date(d2) - new Date(d1)) / 86400000);
+}
+
+function fmt(n) { return '$' + n.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0}); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+// Calculate CC table
+const tbody = document.querySelector('#cc-table tbody');
+let totalPremiumAnnualized = 0;
+let totalCCCapital = 0;
+
+ccPositions.forEach(p => {
+  const dte = daysBetween(p.sellDate, p.expiry);
+  const cost100 = p.costPerShare * 100;
+  const yieldPer = (p.premium / cost100) * 100;
+  const annualized = yieldPer * (365 / dte);
+  
+  totalPremiumAnnualized += (p.premium / dte) * 365;
+  totalCCCapital += cost100;
+
+  let status, statusClass;
+  if (p.closed) { status = '已平仓'; statusClass = 'tag-idle'; }
+  else if (annualized > 30) { status = '高收益'; statusClass = 'tag-safe'; }
+  else if (annualized > 15) { status = '正常'; statusClass = 'tag-safe'; }
+  else { status = '偏低'; statusClass = 'tag-warn'; }
+
+  const daysLeft = daysBetween(today.toISOString().slice(0,10), p.expiry);
+  if (!p.closed && daysLeft <= 2) { status = '⚠️ 即将到期'; statusClass = 'tag-warn'; }
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><strong>${p.ticker}</strong></td>
+    <td>$${p.strike}</td>
+    <td>${p.expiry.slice(5)}</td>
+    <td>${dte}天</td>
+    <td>${fmt(p.premium)}</td>
+    <td>${fmt(Math.round(cost100))}</td>
+    <td>${fmtPct(yieldPer)}</td>
+    <td><strong>${fmtPct(annualized)}</strong></td>
+    <td><span class="tag ${statusClass}">${status}</span></td>
+  `;
+  tbody.appendChild(tr);
+});
+
+// Idle positions
+const idleTbody = document.querySelector('#idle-table tbody');
+let totalIdleCapital = 0;
+idlePositions.forEach(p => {
+  const mv = p.shares * p.cost;
+  totalIdleCapital += mv;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><strong>${p.ticker}</strong></td>
+    <td>${p.shares}</td>
+    <td>$${p.cost}</td>
+    <td>${fmt(Math.round(mv))}</td>
+    <td>${p.canCC ? '<span class="tag tag-safe">可以</span>' : '<span class="tag tag-danger">不足100股</span>'}</td>
+    <td>${p.note}</td>
+  `;
+  idleTbody.appendChild(tr);
+});
+
+// Summary cards
+const totalCapital = totalCCCapital + totalIdleCapital;
+const ccCoverage = (totalCCCapital / totalCapital * 100);
+const portfolioYield = (totalPremiumAnnualized / totalCapital * 100);
+const ccOnlyYield = (totalPremiumAnnualized / totalCCCapital * 100);
+
+const cards = [
+  { label:'总持仓成本', value: fmt(Math.round(totalCapital)), cls:'blue' },
+  { label:'CC 覆盖资金', value: fmt(Math.round(totalCCCapital)), cls:'green' },
+  { label:'闲置资金', value: fmt(Math.round(totalIdleCapital)), cls:'yellow' },
+  { label:'CC 覆盖率', value: fmtPct(ccCoverage), cls: ccCoverage > 60 ? 'green' : 'yellow' },
+  { label:'CC 年化收入(估)', value: fmt(Math.round(totalPremiumAnnualized)), cls:'green' },
+  { label:'组合年化收益率', value: fmtPct(portfolioYield), cls: portfolioYield > 10 ? 'green' : 'yellow' },
+];
+
+const grid = document.getElementById('summary-cards');
+cards.forEach(c => {
+  const div = document.createElement('div');
+  div.className = 'card';
+  div.innerHTML = `<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>`;
+  grid.appendChild(div);
+});
+
+// Optimization plan
+const optChanges = [
+  { action:'卖出', cls:'sell', detail:'CRM 20股 (~$3,693)' },
+  { action:'卖出', cls:'sell', detail:'AMD 20股 (~$4,287)' },
+  { action:'卖出', cls:'sell', detail:'PYPL 20股 (~$859)' },
+  { action:'卖出', cls:'sell', detail:'AMZN 10股 (~$2,054)' },
+  { action:'卖出', cls:'sell', detail:'NEOV 100股 (~$441)' },
+  { action:'卖出', cls:'sell', detail:'COPX 60股 (~$5,054)' },
+  { action:'卖出', cls:'sell', detail:'MSTR 40股 (~$5,344)' },
+  { action:'买入', cls:'buy', detail:'COIN 40股 @ ~$150 (~$6,000)，补到100股开CC' },
+];
+
+const optDiv = document.getElementById('opt-changes');
+optChanges.forEach(c => {
+  const d = document.createElement('div');
+  d.className = 'opt-change';
+  d.innerHTML = `<span class="action ${c.cls}">${c.action}</span> ${c.detail}`;
+  optDiv.appendChild(d);
+});
+
+// Optimized projection
+// After optimization: PDD 200, COIN 100, CRCL 110, NFLX 100, JD 100 (clearing), LI 100 (clearing), NIO 100 (clearing)
+// Core CC positions: PDD, COIN, CRCL, NFLX
+// Estimated monthly CC income (30-45 DTE):
+const optEstimates = [
+  { ticker:'PDD', shares:200, contracts:2, monthlyPremium:120, cost:107.66*200 },   // ~$60/contract/month
+  { ticker:'COIN', shares:100, contracts:1, monthlyPremium:800, cost:155*100 },      // High IV, ~$800/month
+  { ticker:'CRCL', shares:100, contracts:1, monthlyPremium:200, cost:63.60*100 },    // ~$200/month at 30-45 DTE
+  { ticker:'NFLX', shares:100, contracts:1, monthlyPremium:150, cost:80.15*100 },    // ~$150/month
+];
+
+const optAnnualIncome = optEstimates.reduce((s,e) => s + e.monthlyPremium * 12, 0);
+const optTotalCost = optEstimates.reduce((s,e) => s + e.cost, 0);
+const optYield = (optAnnualIncome / optTotalCost * 100);
+
+document.getElementById('current-income').textContent = fmt(Math.round(totalPremiumAnnualized));
+document.getElementById('current-yield').textContent = '组合年化 ' + fmtPct(portfolioYield);
+document.getElementById('opt-income').textContent = fmt(optAnnualIncome);
+document.getElementById('opt-yield').textContent = '组合年化 ' + fmtPct(optYield);
+</script>
+</body>
+</html>
