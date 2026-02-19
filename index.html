@@ -54,7 +54,7 @@ tr:hover{background:#1c2128}
 <div class="grid" id="realized-cards"></div>
 <table id="closed-table"><thead><tr><th>标的</th><th>类型</th><th>Strike</th><th>开仓</th><th>平仓</th><th>持有天数</th><th>权利金</th><th>结果</th></tr></thead><tbody></tbody></table>
 <h2>📊 当前 CC 持仓表现</h2>
-<table id="cc-table"><thead><tr><th>标的</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本(100股)</th><th>单次收益率</th><th>年化收益率</th><th>状态</th></tr></thead><tbody></tbody></table>
+<table id="cc-table"><thead><tr><th>标的</th><th>Strike</th><th>开仓</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本(100股)</th><th>单次收益率</th><th>年化收益率</th><th>状态</th></tr></thead><tbody></tbody></table>
 <h2>💤 未开 CC 的仓位（闲置资金）</h2>
 <table id="idle-table"><thead><tr><th>标的</th><th>股数</th><th>均价</th><th>市值(成本)</th><th>可开CC</th><th>备注</th></tr></thead><tbody></tbody></table>
 <h2>🔄 优化方案</h2>
@@ -144,7 +144,7 @@ function render(D){
     const dl=daysBetween(today,p.expiry);
     if(!p.closed&&dl<=2){st='⚠️ 即将到期';sc='tag-warn'}
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><strong>${p.ticker}</strong></td><td>$${p.strike}</td><td>${p.expiry.slice(5)}</td><td>${dte}天</td><td>${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td><span class="tag ${sc}">${st}</span></td>`;
+    tr.innerHTML=`<td><strong>${p.ticker}</strong></td><td>$${p.strike}</td><td>${p.sellDate.slice(5)}</td><td>${p.expiry.slice(5)}</td><td>${dte}天</td><td>${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td><span class="tag ${sc}">${st}</span></td>`;
     tbody.appendChild(tr);
   });
 
