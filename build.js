@@ -4,7 +4,7 @@ const fs = require('fs');
 const PASSWORD = '1029';
 
 const DATA = {
-  updatedAt: "2026-02-23",
+  updatedAt: "2026-02-24",
   ccPositions: [
     { ticker: "PDD", strike: 108, expiry: "2026-02-27", premium: 58, costPerShare: 107.66, sellDate: "2026-02-14", shares: 100 },
     { ticker: "JD", strike: 31, expiry: "2026-03-06", premium: 42, costPerShare: 31.94, sellDate: "2026-02-14", shares: 100 },
@@ -16,7 +16,8 @@ const DATA = {
     { ticker: "CRM", strike: 170, expiry: "2026-02-27", premium: 570, collateral: 17000, sellDate: "2026-02-23" },
     { ticker: "COIN", strike: 157.5, expiry: "2026-02-27", premium: 240, collateral: 15750, sellDate: "2026-02-23" },
     { ticker: "ORCL", strike: 135, expiry: "2026-02-27", premium: 240, collateral: 13500, sellDate: "2026-02-23" },
-    { ticker: "NET", strike: 155, expiry: "2026-02-27", premium: 334, collateral: 15500, sellDate: "2026-02-24" }
+    { ticker: "NET", strike: 155, expiry: "2026-02-27", premium: 334, collateral: 15500, sellDate: "2026-02-24" },
+    { ticker: "AVGO", strike: 310, expiry: "2026-02-27", premium: 320, collateral: 31000, sellDate: "2026-02-24" }
   ],
   closedTrades: [
     { ticker: "COIN", type: "CC", strike: 167.5, openDate: "2026-02-19", closeDate: "2026-02-20", premium: 170, assigned: true, note: "被Assign，100股call走" },
@@ -40,6 +41,7 @@ const DATA = {
     { ticker: "CRM", phase: "csp", detail: "CSP $170 2/27", note: "新标的，Sell Put建仓" },
     { ticker: "ORCL", phase: "csp", detail: "CSP $135 2/27", note: "新标的，Sell Put建仓" },
     { ticker: "NET", phase: "csp", detail: "CSP $155 2/27", note: "新标的，Sell Put建仓" },
+    { ticker: "AVGO", phase: "csp", detail: "CSP $310 2/27", note: "新标的，Sell Put建仓" },
     { ticker: "PDD", phase: "cc", detail: "CC $108 2/27", note: "100股持有中" },
     { ticker: "JD", phase: "cc-exit", detail: "CC $31 3/6", note: "清退中，让assign" },
     { ticker: "LI", phase: "cc-exit", detail: "CC $19.5 2/27", note: "清退中，让assign" },
@@ -54,6 +56,7 @@ const DATA = {
     { action: "进行中", cls: "active", detail: "CRM CSP $170 2/27 建仓中" },
     { action: "进行中", cls: "active", detail: "ORCL CSP $135 2/27 新加入Wheel池" },
     { action: "进行中", cls: "active", detail: "NET CSP $155 2/27 新加入Wheel池" },
+    { action: "进行中", cls: "active", detail: "AVGO CSP $310 2/27 新加入Wheel池" },
     { action: "待执行", cls: "pending", detail: "NEOV 100股 清仓 (~$441)" },
     { action: "待执行", cls: "pending", detail: "PYPL 20股 清仓 (~$859)" }
   ],
@@ -64,7 +67,8 @@ const DATA = {
     { ticker: "NFLX", shares: 100, contracts: 1, monthlyPremium: 150, cost: 8015 },
     { ticker: "CRM", shares: 100, contracts: 1, monthlyPremium: 500, cost: 17000 },
     { ticker: "ORCL", shares: 100, contracts: 1, monthlyPremium: 300, cost: 13500 },
-    { ticker: "NET", shares: 100, contracts: 1, monthlyPremium: 600, cost: 15500 }
+    { ticker: "NET", shares: 100, contracts: 1, monthlyPremium: 600, cost: 15500 },
+    { ticker: "AVGO", shares: 100, contracts: 1, monthlyPremium: 1200, cost: 31000 }
   ]
 };
 
