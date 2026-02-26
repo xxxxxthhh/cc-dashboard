@@ -24,10 +24,10 @@ const DATA = {
   cspPositions: [
     { ticker: "COIN", strike: 175, expiry: "2026-03-06", premium: 400, collateral: 17500, sellDate: "2026-02-26" },
     { ticker: "COIN", strike: 167.5, expiry: "2026-02-27", premium: 120, collateral: 16750, sellDate: "2026-02-25" },
-    { ticker: "ORCL", strike: 135, expiry: "2026-02-27", premium: 240, collateral: 13500, sellDate: "2026-02-23" },
     { ticker: "AVGO", strike: 310, expiry: "2026-02-27", premium: 320, collateral: 31000, sellDate: "2026-02-24" }
   ],
   closedTrades: [
+    { ticker: "ORCL", type: "CSP", strike: 135, openDate: "2026-02-23", closeDate: "2026-02-26", premium: 218, assigned: false, note: "平仓@$0.20，获利$218，91.7%止盈" },
     { ticker: "NET", type: "CSP", strike: 155, openDate: "2026-02-24", closeDate: "2026-02-26", premium: 307, assigned: false, note: "平仓@$0.25，获利$307，92%止盈" },
     { ticker: "CRM", type: "CSP", strike: 185, openDate: "2026-02-25", closeDate: "2026-02-26", premium: 505, assigned: false, note: "平仓@$0.58，获利$505，89.5%止盈" },
     { ticker: "CRM", type: "CSP", strike: 170, openDate: "2026-02-23", closeDate: "2026-02-25", premium: 418, assigned: false, note: "平仓获利$418，滚仓至$185" },
@@ -61,6 +61,7 @@ const DATA = {
     { ticker: "CRCL", phase: "cc-locked", detail: "CC $65 6/18", note: "远期锁定" }
   ],
   optChanges: [
+    { action: "已完成", cls: "done", detail: "ORCL CSP $135 平仓@$0.20，获利$218（91.7%止盈）" },
     { action: "已完成", cls: "done", detail: "COIN CSP $175 3/6 新开@$4.00，权利金$400" },
     { action: "已完成", cls: "done", detail: "NET CSP $155 平仓@$0.25，获利$307（92%止盈）" },
     { action: "已完成", cls: "done", detail: "CRM CSP $185 平仓@$0.58，获利$505（89.5%止盈）" },
@@ -71,7 +72,7 @@ const DATA = {
     { action: "已完成", cls: "done", detail: "NIO 100股被CC $5 assign，清退完成" },
     { action: "进行中", cls: "active", detail: "COIN CSP $167.5 2/27 接回中（滚仓）" },
     { action: "进行中", cls: "active", detail: "CRM IV crush 后降级观察，等 IV 回升" },
-    { action: "进行中", cls: "active", detail: "ORCL CSP $135 2/27 新加入Wheel池" },
+    { action: "进行中", cls: "active", detail: "ORCL 等下周开新 CSP" },
     { action: "进行中", cls: "active", detail: "NET 等下周开新 CSP" },
     { action: "进行中", cls: "active", detail: "AVGO CSP $310 2/27 新加入Wheel池" },
     { action: "待执行", cls: "pending", detail: "NEOV 100股 清仓 (~$441)" },
