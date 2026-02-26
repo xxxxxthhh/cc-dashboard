@@ -24,10 +24,10 @@ const DATA = {
   cspPositions: [
     { ticker: "COIN", strike: 167.5, expiry: "2026-02-27", premium: 120, collateral: 16750, sellDate: "2026-02-25" },
     { ticker: "ORCL", strike: 135, expiry: "2026-02-27", premium: 240, collateral: 13500, sellDate: "2026-02-23" },
-    { ticker: "NET", strike: 155, expiry: "2026-02-27", premium: 334, collateral: 15500, sellDate: "2026-02-24" },
     { ticker: "AVGO", strike: 310, expiry: "2026-02-27", premium: 320, collateral: 31000, sellDate: "2026-02-24" }
   ],
   closedTrades: [
+    { ticker: "NET", type: "CSP", strike: 155, openDate: "2026-02-24", closeDate: "2026-02-26", premium: 307, assigned: false, note: "平仓@$0.25，获利$307，92%止盈" },
     { ticker: "CRM", type: "CSP", strike: 185, openDate: "2026-02-25", closeDate: "2026-02-26", premium: 505, assigned: false, note: "平仓@$0.58，获利$505，89.5%止盈" },
     { ticker: "CRM", type: "CSP", strike: 170, openDate: "2026-02-23", closeDate: "2026-02-25", premium: 418, assigned: false, note: "平仓获利$418，滚仓至$185" },
     { ticker: "COIN", type: "CSP", strike: 157.5, openDate: "2026-02-23", closeDate: "2026-02-25", premium: 201, assigned: false, note: "平仓获利$201，滚仓至$167.5" },
@@ -49,9 +49,9 @@ const DATA = {
   ],
   wheelCycles: [
     { ticker: "COIN", phase: "csp", detail: "CSP $167.5 2/27", note: "滚仓提strike，接回中" },
-    { ticker: "CRM", phase: "csp", detail: "待开下周 CSP", note: "$185平仓获利$505，等下周开新仓" },
+    { ticker: "CRM", phase: "idle", detail: "IV crush 后观察", note: "IV 85%→42%，等回升再操作" },
     { ticker: "ORCL", phase: "csp", detail: "CSP $135 2/27", note: "新标的，Sell Put建仓" },
-    { ticker: "NET", phase: "csp", detail: "CSP $155 2/27", note: "新标的，Sell Put建仓" },
+    { ticker: "NET", phase: "idle", detail: "CSP $155 已平仓", note: "获利$307，等下周开新仓" },
     { ticker: "AVGO", phase: "csp", detail: "CSP $310 2/27", note: "新标的，Sell Put建仓" },
     { ticker: "PDD", phase: "cc", detail: "CC $108 2/27", note: "100股持有中" },
     { ticker: "JD", phase: "cc-exit", detail: "CC $31 3/6", note: "清退中，让assign" },
@@ -60,6 +60,7 @@ const DATA = {
     { ticker: "CRCL", phase: "cc-locked", detail: "CC $65 6/18", note: "远期锁定" }
   ],
   optChanges: [
+    { action: "已完成", cls: "done", detail: "NET CSP $155 平仓@$0.25，获利$307（92%止盈）" },
     { action: "已完成", cls: "done", detail: "CRM CSP $185 平仓@$0.58，获利$505（89.5%止盈）" },
     { action: "已完成", cls: "done", detail: "CRM CSP $170 平仓获利$418，滚仓至$185" },
     { action: "已完成", cls: "done", detail: "COIN CSP $157.5 平仓获利$201，滚仓至$167.5" },
@@ -67,9 +68,9 @@ const DATA = {
     { action: "已完成", cls: "done", detail: "PDD 100股被CC $104 assign，回笼$10,445" },
     { action: "已完成", cls: "done", detail: "NIO 100股被CC $5 assign，清退完成" },
     { action: "进行中", cls: "active", detail: "COIN CSP $167.5 2/27 接回中（滚仓）" },
-    { action: "进行中", cls: "active", detail: "CRM 等下周开新 CSP" },
+    { action: "进行中", cls: "active", detail: "CRM IV crush 后降级观察，等 IV 回升" },
     { action: "进行中", cls: "active", detail: "ORCL CSP $135 2/27 新加入Wheel池" },
-    { action: "进行中", cls: "active", detail: "NET CSP $155 2/27 新加入Wheel池" },
+    { action: "进行中", cls: "active", detail: "NET 等下周开新 CSP" },
     { action: "进行中", cls: "active", detail: "AVGO CSP $310 2/27 新加入Wheel池" },
     { action: "待执行", cls: "pending", detail: "NEOV 100股 清仓 (~$441)" },
     { action: "待执行", cls: "pending", detail: "PYPL 20股 清仓 (~$859)" }
