@@ -139,6 +139,7 @@ tr:hover{background:rgba(88,166,255,.03)}
 <button data-tab="csp">Cash-Secured Puts</button>
 <button data-tab="closed">已实现收益</button>
 <button data-tab="idle">闲置仓位</button>
+<button data-tab="decision">🎯 决策</button>
 <button data-tab="optimize">优化方案</button>
 </div>
 
@@ -192,6 +193,30 @@ tr:hover{background:rgba(88,166,255,.03)}
 <table id="idle-table"><thead><tr>
 <th>标的</th><th>股数</th><th>均价</th><th>市值</th><th>可开CC</th><th>备注</th>
 </tr></thead><tbody></tbody></table>
+</div>
+
+<!-- Decision -->
+<div class="section" id="tab-decision">
+<div class="grid" id="decision-summary"></div>
+
+<div class="sh"><h2>⚡ 本周操作建议</h2></div>
+<div id="weekly-plan" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:24px"></div>
+
+<div class="sh"><h2>⏰ 到期提醒</h2><span class="count" id="expiry-count">0</span></div>
+<table id="expiry-table"><thead><tr>
+<th>标的</th><th>类型</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>状态</th><th>建议</th>
+</tr></thead><tbody></tbody></table>
+
+<div class="sh"><h2>🎯 下周最优 CSP 候选</h2><span class="count" id="csp-cand-count">0</span></div>
+<table id="csp-cand-table"><thead><tr>
+<th>标的</th><th>现价</th><th>Strike</th><th>OTM%</th><th>DTE</th><th>IV</th><th>权利金</th><th>年化</th><th>OI</th><th>评分</th>
+</tr></thead><tbody></tbody></table>
+
+<div class="sh"><h2>📊 IV 排行</h2></div>
+<div class="grid" id="iv-ranking-grid"></div>
+
+<div class="sh"><h2>💰 资金效率</h2></div>
+<div class="grid" id="capital-eff-grid"></div>
 </div>
 
 <!-- Optimize -->
@@ -362,6 +387,96 @@ function render(D){
     tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>${p.shares}</td><td>$${p.cost}</td><td>${fmt(Math.round(mv))}</td><td>${p.canCC?statusTag('可以','green'):statusTag('不足100股','red')}</td><td style="color:var(--dim)">${p.note}</td>`;
     itb.appendChild(tr);
   });
+
+  // === Decision Tab ===
+  if(D.decision){
+    const dec=D.decision;
+
+    // Summary cards
+    const dsc=document.getElementById('decision-summary');
+    const ce=dec.capitalEfficiency||{};
+    const dCards=[
+      {label:'资金利用率',value:fmtPct(ce.utilization||0),cls:ce.utilization>60?'green':'yellow',sub:`部署 ${fmt(ce.deployedCapital||0)} / 总计 ${fmt(ce.totalCapital||0)}`},
+      {label:'年化收租收入',value:fmt(ce.totalAnnualPremium||0),cls:'green',sub:`CC ${fmt(ce.ccAnnualPremium||0)} + CSP ${fmt(ce.cspAnnualPremium||0)}`},
+      {label:'组合年化收益率',value:fmtPct(ce.totalYield||0),cls:ce.totalYield>20?'green':'yellow',sub:`工作资金年化 ${fmtPct(ce.workingYield||0)}`},
+      {label:'死钱占比',value:fmtPct(ce.deadMoneyPct||0),cls:ce.deadMoneyPct>10?'red':'green',sub:fmt(ce.deadMoney||0)+' 闲置'},
+      {label:'到期提醒',value:(dec.expiringAlerts||[]).length+'个',cls:'yellow',sub:'本周需关注'},
+      {label:'CSP 候选',value:(dec.cspCandidates||[]).length+'个',cls:'purple',sub:'下周可开仓'},
+    ];
+    dCards.forEach(c=>{
+      const d=document.createElement('div');d.className='card';
+      d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div><div class="sub-value">${c.sub||''}</div>`;
+      dsc.appendChild(d);
+    });
+
+    // Weekly plan
+    const wp=document.getElementById('weekly-plan');
+    const plans=dec.weeklyPlan||[];
+    if(plans.length===0){
+      wp.innerHTML='<div style="color:var(--dim);padding:8px">暂无操作建议</div>';
+    }else{
+      plans.forEach(p=>{
+        const d=document.createElement('div');d.className='opt-item';
+        const urgCls=p.urgency==='high'?'active':p.urgency==='medium'?'pending':'done';
+        const urgLabel=p.urgency==='high'?'紧急':p.urgency==='medium'?'关注':'建议';
+        const catIcon={expiry:'⏰',opportunity:'🎯',efficiency:'💰'}[p.category]||'📋';
+        d.innerHTML=`<span class="opt-badge ${urgCls}">${urgLabel}</span><span>${catIcon} ${p.action}</span>`;
+        wp.appendChild(d);
+      });
+    }
+
+    // Expiring alerts
+    const ea=dec.expiringAlerts||[];
+    document.getElementById('expiry-count').textContent=ea.length+'个';
+    const etb=document.querySelector('#expiry-table tbody');
+    ea.forEach(a=>{
+      const tr=document.createElement('tr');
+      const urgTag=a.urgency==='high'?statusTag('紧急','red'):statusTag('关注','yellow');
+      tr.innerHTML=`<td class="ticker">${a.ticker}</td><td>${statusTag(a.type,a.type==='CC'?'cyan':'purple')}</td><td>$${a.strike}</td><td>${a.expiry.slice(5)}</td><td>${a.dte}天</td><td class="green">${fmt(a.premium)}</td><td>${urgTag}</td><td style="color:var(--dim);font-size:12px">${a.action}</td>`;
+      etb.appendChild(tr);
+    });
+
+    // CSP candidates
+    const cc2=dec.cspCandidates||[];
+    document.getElementById('csp-cand-count').textContent=cc2.length+'个';
+    const cctb=document.querySelector('#csp-cand-table tbody');
+    cc2.forEach((c,i)=>{
+      const tr=document.createElement('tr');
+      const signal=c.annYield>=200?'🔥':c.annYield>=100?'💰':'👀';
+      const scoreColor=c.score>=100?'green':c.score>=50?'yellow':'dim';
+      tr.innerHTML=`<td class="ticker">${c.ticker}</td><td>$${c.price}</td><td>$${c.strike}</td><td>${c.otmPct}%</td><td>${c.dte}天</td><td>${c.iv}%</td><td class="green">$${c.premium}</td><td><strong>${c.annYield}%</strong> ${signal}</td><td>${c.oi.toLocaleString()}</td><td>${statusTag(c.score,scoreColor)}</td>`;
+      cctb.appendChild(tr);
+    });
+
+    // IV rankings
+    const ivg=document.getElementById('iv-ranking-grid');
+    const ivr=dec.ivRankings||[];
+    ivr.slice(0,8).forEach(r=>{
+      const d=document.createElement('div');d.className='card';
+      const cls=r.iv>=70?'red':r.iv>=50?'yellow':'dim';
+      const signal=r.iv>=70?'🔥':r.iv>=50?'💰':'';
+      d.innerHTML=`<div class="label">${r.ticker} ${signal}</div><div class="value ${cls}">${r.iv}%</div><div class="sub-value">$${r.price}</div>`;
+      ivg.appendChild(d);
+    });
+
+    // Capital efficiency
+    const ceg=document.getElementById('capital-eff-grid');
+    const ceCards=[
+      {label:'总资本',value:fmt(ce.totalCapital||0),cls:'blue'},
+      {label:'已部署',value:fmt(ce.deployedCapital||0),cls:'green',sub:fmtPct(ce.utilization||0)+' 利用率'},
+      {label:'闲置资金',value:fmt(ce.deadMoney||0),cls:ce.deadMoneyPct>10?'red':'dim'},
+      {label:'现金',value:fmt(ce.cash||0),cls:'blue'},
+    ];
+    ceCards.forEach(c=>{
+      const d=document.createElement('div');d.className='card';
+      d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>${c.sub?'<div class="sub-value">'+c.sub+'</div>':''}`;
+      ceg.appendChild(d);
+    });
+  }else{
+    // No decision data
+    const dsc=document.getElementById('decision-summary');
+    dsc.innerHTML='<div class="card" style="grid-column:1/-1"><div class="label">决策数据</div><div class="value yellow">未生成</div><div class="sub-value">运行 python decision_engine.py 生成</div></div>';
+  }
 
   // === Optimize ===
   const oc=document.getElementById('opt-changes');

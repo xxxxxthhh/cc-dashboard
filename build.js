@@ -1,7 +1,16 @@
 const crypto = require('crypto');
 const fs = require('fs');
+const path = require('path');
 
 const PASSWORD = '1029';
+
+// Load decision data if available
+let DECISION = null;
+const decisionPath = path.join(__dirname, 'decision_data.json');
+if (fs.existsSync(decisionPath)) {
+  DECISION = JSON.parse(fs.readFileSync(decisionPath, 'utf8'));
+  console.log('📊 Decision data loaded:', decisionPath);
+}
 
 const DATA = {
   updatedAt: "2026-02-26",
@@ -75,6 +84,11 @@ const DATA = {
     { ticker: "AVGO", shares: 100, contracts: 1, monthlyPremium: 1200, cost: 31000 }
   ]
 };
+
+// Inject decision data
+if (DECISION) {
+  DATA.decision = DECISION;
+}
 
 // Encrypt
 function encrypt(data, password) {
