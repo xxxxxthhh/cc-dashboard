@@ -51,7 +51,7 @@ const DATA = {
   wheelCycles: [
     { ticker: "COIN", phase: "csp", detail: "CSP $175 3/6 + CSP $167.5 2/27", note: "双层CSP，$167.5明天到期" },
     { ticker: "CRM", phase: "idle", detail: "IV crush 后观察", note: "IV 85%→42%，等回升再操作" },
-    { ticker: "ORCL", phase: "csp", detail: "CSP $135 2/27", note: "新标的，Sell Put建仓" },
+    { ticker: "ORCL", phase: "idle", detail: "CSP $135 已平仓", note: "获利$218，等下周开新CSP" },
     { ticker: "NET", phase: "idle", detail: "CSP $155 已平仓", note: "获利$307，等下周开新仓" },
     { ticker: "AVGO", phase: "csp", detail: "CSP $310 2/27", note: "新标的，Sell Put建仓" },
     { ticker: "PDD", phase: "cc", detail: "CC $108 2/27", note: "100股持有中" },
