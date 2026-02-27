@@ -13,20 +13,20 @@ if (fs.existsSync(decisionPath)) {
 }
 
 const DATA = {
-  updatedAt: "2026-02-26",
+  updatedAt: "2026-02-28",
   ccPositions: [
-    { ticker: "PDD", strike: 108, expiry: "2026-02-27", premium: 58, costPerShare: 107.66, sellDate: "2026-02-14", shares: 100 },
     { ticker: "JD", strike: 31, expiry: "2026-03-06", premium: 42, costPerShare: 31.94, sellDate: "2026-02-14", shares: 100 },
-    { ticker: "LI", strike: 19.5, expiry: "2026-02-27", premium: 39, costPerShare: 23.01, sellDate: "2026-02-14", shares: 100 },
     { ticker: "CRCL", strike: 65, expiry: "2026-06-18", premium: 720, costPerShare: 63.60, sellDate: "2026-01-20", shares: 100 },
     { ticker: "NFLX", strike: 81, expiry: "2026-03-06", premium: 120, costPerShare: 80.15, sellDate: "2026-02-13", shares: 100 }
   ],
   cspPositions: [
-    { ticker: "COIN", strike: 175, expiry: "2026-03-06", premium: 400, collateral: 17500, sellDate: "2026-02-26" },
-    { ticker: "COIN", strike: 167.5, expiry: "2026-02-27", premium: 120, collateral: 16750, sellDate: "2026-02-25" },
-    { ticker: "AVGO", strike: 310, expiry: "2026-02-27", premium: 320, collateral: 31000, sellDate: "2026-02-24" }
+    { ticker: "COIN", strike: 175, expiry: "2026-03-06", premium: 400, collateral: 17500, sellDate: "2026-02-26" }
   ],
   closedTrades: [
+    { ticker: "AVGO", type: "CSP", strike: 310, openDate: "2026-02-24", closeDate: "2026-02-27", premium: 320, assigned: true, note: "被Assign，接100股@$310，权利金$320抵扣" },
+    { ticker: "COIN", type: "CSP", strike: 167.5, openDate: "2026-02-25", closeDate: "2026-02-27", premium: 120, assigned: true, note: "被Assign，接100股@$167.5，权利金$120抵扣" },
+    { ticker: "LI", type: "CC", strike: 19.5, openDate: "2026-02-14", closeDate: "2026-02-27", premium: 39, assigned: false, note: "到期归零，权利金$39落袋" },
+    { ticker: "PDD", type: "CC", strike: 108, openDate: "2026-02-14", closeDate: "2026-02-27", premium: 58, assigned: false, note: "到期归零，权利金$58落袋" },
     { ticker: "ORCL", type: "CSP", strike: 135, openDate: "2026-02-23", closeDate: "2026-02-26", premium: 218, assigned: false, note: "平仓@$0.20，获利$218，91.7%止盈" },
     { ticker: "NET", type: "CSP", strike: 155, openDate: "2026-02-24", closeDate: "2026-02-26", premium: 307, assigned: false, note: "平仓@$0.25，获利$307，92%止盈" },
     { ticker: "CRM", type: "CSP", strike: 185, openDate: "2026-02-25", closeDate: "2026-02-26", premium: 505, assigned: false, note: "平仓@$0.58，获利$505，89.5%止盈" },
@@ -49,18 +49,20 @@ const DATA = {
     { ticker: "AMZN", shares: 10, cost: 205.37, canCC: false, note: "不足100股" }
   ],
   wheelCycles: [
-    { ticker: "COIN", phase: "csp", detail: "CSP $175 3/6 + CSP $167.5 2/27", note: "双层CSP，$167.5明天到期" },
+    { ticker: "COIN", phase: "assigned", detail: "CSP $167.5 被Assign，接100股@$167.5", note: "持有200股，现$174.92，CSP $175 3/6 在持" },
+    { ticker: "AVGO", phase: "assigned", detail: "CSP $310 被Assign，接100股@$310", note: "新买入100股，现$319.20，考虑开CC" },
     { ticker: "CRM", phase: "idle", detail: "IV crush 后观察", note: "IV 85%→42%，等回升再操作" },
     { ticker: "ORCL", phase: "idle", detail: "CSP $135 已平仓", note: "获利$218，等下周开新CSP" },
     { ticker: "NET", phase: "idle", detail: "CSP $155 已平仓", note: "获利$307，等下周开新仓" },
-    { ticker: "AVGO", phase: "csp", detail: "CSP $310 2/27", note: "新标的，Sell Put建仓" },
-    { ticker: "PDD", phase: "cc", detail: "CC $108 2/27", note: "100股持有中" },
     { ticker: "JD", phase: "cc-exit", detail: "CC $31 3/6", note: "清退中，让assign" },
-    { ticker: "LI", phase: "cc-exit", detail: "CC $19.5 2/27", note: "清退中，让assign" },
     { ticker: "NFLX", phase: "cc", detail: "CC $81 3/6", note: "保股票为主" },
     { ticker: "CRCL", phase: "cc-locked", detail: "CC $65 6/18", note: "远期锁定" }
   ],
   optChanges: [
+    { action: "已完成", cls: "done", detail: "AVGO CSP $310 被Assign，接100股@$310" },
+    { action: "已完成", cls: "done", detail: "COIN CSP $167.5 被Assign，接100股@$167.5" },
+    { action: "已完成", cls: "done", detail: "LI CC $19.5 到期归零，权利金$39落袋" },
+    { action: "已完成", cls: "done", detail: "PDD CC $108 到期归零，权利金$58落袋" },
     { action: "已完成", cls: "done", detail: "ORCL CSP $135 平仓@$0.20，获利$218（91.7%止盈）" },
     { action: "已完成", cls: "done", detail: "COIN CSP $175 3/6 新开@$4.00，权利金$400" },
     { action: "已完成", cls: "done", detail: "NET CSP $155 平仓@$0.25，获利$307（92%止盈）" },
