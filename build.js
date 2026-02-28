@@ -23,8 +23,8 @@ const DATA = {
     { ticker: "COIN", strike: 175, expiry: "2026-03-06", premium: 400, collateral: 17500, sellDate: "2026-02-26" }
   ],
   closedTrades: [
-    { ticker: "AVGO", type: "CSP", strike: 310, openDate: "2026-02-24", closeDate: "2026-02-27", premium: 320, assigned: true, note: "被Assign，接100股@$310，权利金$320抵扣" },
-    { ticker: "COIN", type: "CSP", strike: 167.5, openDate: "2026-02-25", closeDate: "2026-02-27", premium: 120, assigned: true, note: "被Assign，接100股@$167.5，权利金$120抵扣" },
+    { ticker: "AVGO", type: "CSP", strike: 310, openDate: "2026-02-24", closeDate: "2026-02-27", premium: 320, assigned: false, note: "OTM到期归零，权利金$320落袋" },
+    { ticker: "COIN", type: "CSP", strike: 167.5, openDate: "2026-02-25", closeDate: "2026-02-27", premium: 120, assigned: false, note: "OTM到期归零，权利金$120落袋" },
     { ticker: "LI", type: "CC", strike: 19.5, openDate: "2026-02-14", closeDate: "2026-02-27", premium: 39, assigned: false, note: "到期归零，权利金$39落袋" },
     { ticker: "PDD", type: "CC", strike: 108, openDate: "2026-02-14", closeDate: "2026-02-27", premium: 58, assigned: false, note: "到期归零，权利金$58落袋" },
     { ticker: "ORCL", type: "CSP", strike: 135, openDate: "2026-02-23", closeDate: "2026-02-26", premium: 218, assigned: false, note: "平仓@$0.20，获利$218，91.7%止盈" },
@@ -49,8 +49,8 @@ const DATA = {
     { ticker: "AMZN", shares: 10, cost: 205.37, canCC: false, note: "不足100股" }
   ],
   wheelCycles: [
-    { ticker: "COIN", phase: "assigned", detail: "CSP $167.5 被Assign，接100股@$167.5", note: "持有200股，现$174.92，CSP $175 3/6 在持" },
-    { ticker: "AVGO", phase: "assigned", detail: "CSP $310 被Assign，接100股@$310", note: "新买入100股，现$319.20，考虑开CC" },
+    { ticker: "COIN", phase: "csp", detail: "CSP $175 3/6 在持", note: "现$175.85，贴strike观察" },
+    { ticker: "AVGO", phase: "idle", detail: "CSP $310 OTM到期", note: "权利金$320落袋，等3/4财报后再操作" },
     { ticker: "CRM", phase: "idle", detail: "IV crush 后观察", note: "IV 85%→42%，等回升再操作" },
     { ticker: "ORCL", phase: "idle", detail: "CSP $135 已平仓", note: "获利$218，等下周开新CSP" },
     { ticker: "NET", phase: "idle", detail: "CSP $155 已平仓", note: "获利$307，等下周开新仓" },
@@ -59,8 +59,8 @@ const DATA = {
     { ticker: "CRCL", phase: "cc-locked", detail: "CC $65 6/18", note: "远期锁定" }
   ],
   optChanges: [
-    { action: "已完成", cls: "done", detail: "AVGO CSP $310 被Assign，接100股@$310" },
-    { action: "已完成", cls: "done", detail: "COIN CSP $167.5 被Assign，接100股@$167.5" },
+    { action: "已完成", cls: "done", detail: "AVGO CSP $310 OTM到期归零，权利金$320落袋" },
+    { action: "已完成", cls: "done", detail: "COIN CSP $167.5 OTM到期归零，权利金$120落袋" },
     { action: "已完成", cls: "done", detail: "LI CC $19.5 到期归零，权利金$39落袋" },
     { action: "已完成", cls: "done", detail: "PDD CC $108 到期归零，权利金$58落袋" },
     { action: "已完成", cls: "done", detail: "ORCL CSP $135 平仓@$0.20，获利$218（91.7%止盈）" },
@@ -72,11 +72,11 @@ const DATA = {
     { action: "已完成", cls: "done", detail: "COIN 100股被CC $167.5 assign，回笼$16,920" },
     { action: "已完成", cls: "done", detail: "PDD 100股被CC $104 assign，回笼$10,445" },
     { action: "已完成", cls: "done", detail: "NIO 100股被CC $5 assign，清退完成" },
-    { action: "进行中", cls: "active", detail: "COIN CSP $167.5 2/27 接回中（滚仓）" },
+    { action: "进行中", cls: "active", detail: "COIN CSP $175 3/6 在持，贴strike观察" },
     { action: "进行中", cls: "active", detail: "CRM IV crush 后降级观察，等 IV 回升" },
     { action: "进行中", cls: "active", detail: "ORCL 等下周开新 CSP" },
     { action: "进行中", cls: "active", detail: "NET 等下周开新 CSP" },
-    { action: "进行中", cls: "active", detail: "AVGO CSP $310 2/27 新加入Wheel池" },
+    { action: "进行中", cls: "active", detail: "AVGO 等3/4财报后开新CSP" },
     { action: "待执行", cls: "pending", detail: "NEOV 100股 清仓 (~$441)" },
     { action: "待执行", cls: "pending", detail: "PYPL 20股 清仓 (~$859)" }
   ],
@@ -88,7 +88,7 @@ const DATA = {
     { ticker: "CRM", shares: 100, contracts: 1, monthlyPremium: 500, cost: 17000 },
     { ticker: "ORCL", shares: 100, contracts: 1, monthlyPremium: 300, cost: 13500 },
     { ticker: "NET", shares: 100, contracts: 1, monthlyPremium: 600, cost: 15500 },
-    { ticker: "AVGO", shares: 100, contracts: 1, monthlyPremium: 1200, cost: 31000 }
+    { ticker: "AVGO", shares: 100, contracts: 1, monthlyPremium: 1200, cost: 31000, note: "待建仓" }
   ]
 };
 
