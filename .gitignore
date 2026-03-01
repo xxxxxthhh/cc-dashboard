@@ -1,0 +1,11 @@
+# Local sensitive data (do NOT commit)
+portfolio_data.json
+decision_data.json
+
+# Logs
+logs/
+*.log
+
+# OS / tooling
+.DS_Store
+node_modules/
