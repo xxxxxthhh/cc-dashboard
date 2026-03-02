@@ -24,6 +24,7 @@ OUTPUT = SCRIPT_DIR / "portfolio_data.json"
 
 
 def _parse_money_to_int(s: str) -> int | None:
+    """Parse $ amounts without sign, return integer dollars."""
     if not s:
         return None
     s = s.strip().lower().replace(",", "")
@@ -36,6 +37,18 @@ def _parse_money_to_int(s: str) -> int | None:
     if m:
         return int(float(m.group(1)))
     return None
+
+
+def _parse_signed_money_to_int(s: str) -> int | None:
+    """Parse signed money like '+$291' or '-$1,100' into integer dollars."""
+    if not s:
+        return None
+    raw = s.strip().replace(",", "")
+    sign = -1 if "-" in raw else 1
+    v = _parse_money_to_int(raw)
+    if v is None:
+        return None
+    return sign * v
 
 
 def _parse_price(s: str) -> float | None:
@@ -211,14 +224,23 @@ def main():
         sd = _parse_mmdd_in_text(status)
         sell_date = datetime(year, sd[0], sd[1]).strftime("%Y-%m-%d") if sd else None
 
+        # 尝试推导 CC 开仓权利金（entry credit）
+        # portfolio.md 的 CC 表里通常有：现价（期权现值）+ P&L（对该期权的浮盈亏）
+        # 对于卖方：entry_credit ≈ current_value + pnl
+        cur_opt = _parse_price(r[4]) if len(r) >= 5 else None
+        pnl = _parse_signed_money_to_int(r[5]) if len(r) >= 6 else None
+        entry_credit = 0
+        if cur_opt is not None and pnl is not None:
+            cur_val = int(round(abs(contracts) * cur_opt * 100))
+            entry_credit = max(0, cur_val + pnl)
+
         cc_positions.append({
             "ticker": ticker,
             "strike": strike,
             "expiry": expiry,
             "contracts": contracts,
             "sellDate": sell_date,
-            # decision_engine / dashboard 允许缺失：premium / costPerShare
-            "premium": 0,
+            "premium": entry_credit,
         })
 
     # CSP 持仓
