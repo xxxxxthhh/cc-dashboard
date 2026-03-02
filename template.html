@@ -342,8 +342,10 @@ function render(D){
   const daysYTD=days('2026-01-01',today);
   const annRealized=daysYTD>0?totalRealized*(365/daysYTD):0;
 
+  const missingCC=D.ccPositions.filter(p=>num(p.premium,0)<=0).length;
+  const ccSub=`CC ${fmt(Math.round(totalCCPremium))}`+(missingCC?` (缺${missingCC}张开仓价)`:``);
   const cards=[
-    {label:'活跃权利金',value:fmt(Math.round(activePremium)),cls:'green',sub:`CC ${fmt(Math.round(totalCCPremium))} + CSP ${fmt(Math.round(totalCSPPremium))}`},
+    {label:'活跃权利金',value:fmt(Math.round(activePremium)),cls:'green',sub:`${ccSub} + CSP ${fmt(Math.round(totalCSPPremium))}`},
     {label:'YTD 已实现',value:fmt(Math.round(totalRealized)),cls:'green',sub:`${D.closedTrades.length}笔 · 年化推算 ${fmt(Math.round(annRealized))}`},
     {label:'活跃CC',value:D.ccPositions.length+'张',cls:'cyan',sub:fmt(Math.round(totalCCCost))+' 覆盖'},
     {label:'活跃CSP',value:D.cspPositions.length+'张',cls:'purple',sub:fmt(Math.round(totalCSPCollateral))+' 保证金'},
@@ -381,8 +383,12 @@ function render(D){
     else if(ann>30){st='高收益';sc2='green'}
     else if(ann>15){st='正常';sc2='green'}
     else{st='偏低';sc2='yellow'}
+    const prem=num(p.premium,0);
+    const premText=prem>0?fmt(prem):'—';
+    const yPerText=prem>0?fmtPct(yPer):'—';
+    const annText=prem>0?fmtPct(ann):'—';
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
+    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${premText}</td><td>${fmt(Math.round(cost100))}</td><td>${yPerText}</td><td><strong>${annText}</strong></td><td>${statusTag(st,sc2)}</td>`;
     ccTb.appendChild(tr);
   });
 

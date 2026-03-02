@@ -19,7 +19,8 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
 WORKSPACE = Path.home() / ".openclaw" / "workspace"
-PORTFOLIO_MD = WORKSPACE / "memory" / "portfolio.md"
+MEMORY_DIR = WORKSPACE / "memory"
+PORTFOLIO_MD = MEMORY_DIR / "portfolio.md"
 OUTPUT = SCRIPT_DIR / "portfolio_data.json"
 
 
@@ -155,13 +156,7 @@ def _parse_mmdd_in_text(s: str) -> tuple[int, int] | None:
 
 
 def _parse_premium_from_note(note: str) -> int:
-    """Best-effort parse realized premium/profit from Chinese notes.
-
-    Examples:
-      - '获利$307' -> 307
-      - '$120全收' -> 120
-      - '权利金全收' (no amount) -> 0
-    """
+    """Best-effort parse realized premium/profit from Chinese notes."""
     if not note:
         return 0
     note = note.replace(",", "")
@@ -175,6 +170,57 @@ def _parse_premium_from_note(note: str) -> int:
     if m:
         return int(float(m.group(1)))
     return 0
+
+
+def _iter_memory_md_lines():
+    """Yield (path, line) from memory/*.md excluding portfolio.md."""
+    for p in sorted(MEMORY_DIR.glob("*.md")):
+        if p.name == "portfolio.md":
+            continue
+        try:
+            for line in p.read_text(encoding="utf-8").splitlines():
+                yield p, line
+        except Exception:
+            continue
+
+
+def find_cc_entry_credit_from_logs(ticker: str, strike: float, contracts: int) -> int | None:
+    """Try to find the *actual* entry credit for a CC from old journal logs.
+
+    We only return a value when we find an explicit open trade record (e.g. '@ $1.20，收 $120').
+    No mark-to-market back-solving here.
+    """
+    strike_s = str(strike).rstrip("0").rstrip(".")
+    tk = ticker.upper().strip()
+
+    # Common patterns seen in our logs
+    # Example: 卖出 NFLX Mar 6 $81 Call @ $1.20，收 $120
+    pat = re.compile(
+        rf"卖出\s+{re.escape(tk)}.*?\$?{re.escape(strike_s)}\s*Call.*?@\s*\$?([\d.]+)(?:.*?收\s*\$\s*([\d.]+))?",
+        re.IGNORECASE,
+    )
+
+    for _p, line in _iter_memory_md_lines():
+        if tk not in line:
+            continue
+        if "call" not in line.lower():
+            continue
+        if strike_s not in line:
+            continue
+
+        m = pat.search(line)
+        if not m:
+            continue
+
+        price = float(m.group(1)) if m.group(1) else None
+        cash = float(m.group(2)) if m.group(2) else None
+
+        if cash is not None and cash > 0:
+            return int(round(cash))
+        if price is not None and price > 0:
+            return int(round(abs(contracts) * price * 100))
+
+    return None
 
 
 def main():
@@ -224,15 +270,8 @@ def main():
         sd = _parse_mmdd_in_text(status)
         sell_date = datetime(year, sd[0], sd[1]).strftime("%Y-%m-%d") if sd else None
 
-        # 尝试推导 CC 开仓权利金（entry credit）
-        # portfolio.md 的 CC 表里通常有：现价（期权现值）+ P&L（对该期权的浮盈亏）
-        # 对于卖方：entry_credit ≈ current_value + pnl
-        cur_opt = _parse_price(r[4]) if len(r) >= 5 else None
-        pnl = _parse_signed_money_to_int(r[5]) if len(r) >= 6 else None
-        entry_credit = 0
-        if cur_opt is not None and pnl is not None:
-            cur_val = int(round(abs(contracts) * cur_opt * 100))
-            entry_credit = max(0, cur_val + pnl)
+        # 从旧日志中找“真实开仓权利金”（如果找不到就留 0，不瞎推）
+        entry_credit = find_cc_entry_credit_from_logs(ticker, strike, contracts) or 0
 
         cc_positions.append({
             "ticker": ticker,
