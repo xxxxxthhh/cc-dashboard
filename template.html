@@ -281,11 +281,19 @@ document.getElementById('nav').addEventListener('click',e=>{
   document.getElementById('tab-'+e.target.dataset.tab).classList.add('active');
 });
 
-const fmt=n=>'$'+n.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
-const fmtPct=n=>n.toFixed(1)+'%';
-const days=(a,b)=>Math.round((new Date(b)-new Date(a))/864e5);
+const num=(x,d=0)=>{const n=Number(x);return Number.isFinite(n)?n:d;}
+const mmdd=s=>(typeof s==='string'&&s.length>=5)?s.slice(5):'—';
+const fmt=n=>'$'+num(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtPct=n=>num(n).toFixed(1)+'%';
+const days=(a,b)=>{
+  const da=new Date(a),db=new Date(b);
+  const diff=(db-da)/864e5;
+  return Number.isFinite(diff)?Math.round(diff):NaN;
+};
 
 function dteTag(dte,total){
+  dte=num(dte,0);total=num(total,0);
+  if(total<=0) total=Math.max(dte,1);
   const pct=Math.max(0,Math.min(100,(1-dte/total)*100));
   let color=dte<=3?'var(--red)':dte<=7?'var(--yellow)':'var(--green)';
   return `<div>${dte}天</div><div class="dte-bar"><div class="dte-fill" style="width:${pct}%;background:${color}"></div></div>`;
@@ -294,15 +302,40 @@ function dteTag(dte,total){
 function statusTag(text,type){return `<span class="tag tag-${type}">${text}</span>`}
 
 function render(D){
+  // Normalize optional fields (portfolio_data.json 允许最小字段集)
+  D=D||{};
+  D.updatedAt=D.updatedAt||new Date().toISOString().slice(0,10);
+  D.ccPositions=D.ccPositions||[];
+  D.cspPositions=D.cspPositions||[];
+  D.closedTrades=D.closedTrades||[];
+  D.wheelCycles=D.wheelCycles||[];
+  D.idlePositions=D.idlePositions||[];
+  D.optChanges=D.optChanges||[];
+  D.optEstimates=D.optEstimates||[];
+
   const today=D.updatedAt;
   document.getElementById('update-date').textContent=today;
 
+  const idleMap={};
+  D.idlePositions.forEach(p=>{idleMap[p.ticker]=p;});
+
   // === Summary ===
   let totalCCPremium=0,totalCSPPremium=0,totalRealized=0,totalCCCost=0,totalCSPCollateral=0,totalIdleCost=0;
-  D.ccPositions.forEach(p=>{totalCCPremium+=p.premium;totalCCCost+=p.costPerShare*100});
-  D.cspPositions.forEach(p=>{totalCSPPremium+=p.premium;totalCSPCollateral+=p.collateral});
-  D.closedTrades.forEach(t=>totalRealized+=t.premium);
-  D.idlePositions.forEach(p=>totalIdleCost+=p.shares*p.cost);
+  D.ccPositions.forEach(p=>{
+    totalCCPremium+=num(p.premium,0);
+    const idle=idleMap[p.ticker];
+    const cps=num(p.costPerShare, idle? idle.cost : p.strike);
+    const contracts=Math.abs(num(p.contracts,-1));
+    totalCCCost+=cps*100*contracts;
+  });
+  D.cspPositions.forEach(p=>{
+    totalCSPPremium+=num(p.premium,0);
+    const strike=num(p.strike,0);
+    const contracts=Math.abs(num(p.contracts,-1));
+    totalCSPCollateral+=num(p.collateral, contracts*strike*100);
+  });
+  D.closedTrades.forEach(t=>totalRealized+=num(t.premium,0));
+  D.idlePositions.forEach(p=>totalIdleCost+=num(p.shares,0)*num(p.cost,0));
 
   const activePremium=totalCCPremium+totalCSPPremium;
   const totalCap=totalCCCost+totalCSPCollateral+totalIdleCost;
@@ -334,10 +367,13 @@ function render(D){
   document.getElementById('cc-count').textContent=D.ccPositions.length+'张';
   const ccTb=document.querySelector('#cc-table tbody');
   D.ccPositions.forEach(p=>{
-    const totalDte=days(p.sellDate,p.expiry);
+    const sellDate=p.sellDate||today;
+    const totalDte=days(sellDate,p.expiry);
     const dte=days(today,p.expiry);
-    const cost100=p.costPerShare*100;
-    const yPer=(p.premium/cost100)*100;
+    const idle=idleMap[p.ticker];
+    const cps=num(p.costPerShare, idle? idle.cost : p.strike);
+    const cost100=cps*100;
+    const yPer=cost100>0?(num(p.premium,0)/cost100)*100:0;
     const ann=totalDte>0?yPer*(365/totalDte):0;
     let st,sc2;
     if(dte<=0){st='已到期';sc2='dim'}
@@ -346,7 +382,7 @@ function render(D){
     else if(ann>15){st='正常';sc2='green'}
     else{st='偏低';sc2='yellow'}
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${p.sellDate.slice(5)}</td><td>${p.expiry.slice(5)}</td><td>${dteTag(Math.max(0,dte),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
+    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(Math.round(cost100))}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
     ccTb.appendChild(tr);
   });
 
@@ -354,9 +390,13 @@ function render(D){
   document.getElementById('csp-count').textContent=D.cspPositions.length+'张';
   const cspTb=document.querySelector('#csp-table tbody');
   D.cspPositions.forEach(p=>{
-    const totalDte=days(p.sellDate,p.expiry);
+    const sellDate=p.sellDate||today;
+    const totalDte=days(sellDate,p.expiry);
     const dte=days(today,p.expiry);
-    const yPer=(p.premium/p.collateral)*100;
+    const strike=num(p.strike,0);
+    const contracts=Math.abs(num(p.contracts,-1));
+    const collateral=num(p.collateral, contracts*strike*100);
+    const yPer=collateral>0?(num(p.premium,0)/collateral)*100:0;
     const ann=totalDte>0?yPer*(365/totalDte):0;
     let st,sc2;
     if(dte<=0){st='已到期';sc2='dim'}
@@ -364,7 +404,7 @@ function render(D){
     else if(ann>30){st='高收益';sc2='purple'}
     else{st='正常';sc2='green'}
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${p.sellDate.slice(5)}</td><td>${p.expiry.slice(5)}</td><td>${dteTag(Math.max(0,dte),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(p.collateral)}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
+    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(collateral)}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
     cspTb.appendChild(tr);
   });
 
@@ -392,9 +432,9 @@ function render(D){
   // === Idle ===
   const itb=document.querySelector('#idle-table tbody');
   D.idlePositions.forEach(p=>{
-    const mv=p.shares*p.cost;
+    const mv=num(p.shares,0)*num(p.cost,0);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>${p.shares}</td><td>$${p.cost}</td><td>${fmt(Math.round(mv))}</td><td>${p.canCC?statusTag('可以','green'):statusTag('不足100股','red')}</td><td style="color:var(--dim)">${p.note}</td>`;
+    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>${num(p.shares,0)}</td><td>$${num(p.cost,0)}</td><td>${fmt(Math.round(mv))}</td><td>${p.canCC?statusTag('可以','green'):statusTag('不足100股','red')}</td><td style="color:var(--dim)">${p.note||''}</td>`;
     itb.appendChild(tr);
   });
 
@@ -525,19 +565,23 @@ function render(D){
 
   // === Optimize ===
   const oc=document.getElementById('opt-changes');
-  D.optChanges.forEach(c=>{
-    const d=document.createElement('div');d.className='opt-item';
-    d.innerHTML=`<span class="opt-badge ${c.cls}">${c.action}</span><span>${c.detail}</span>`;
-    oc.appendChild(d);
-  });
+  if(D.optChanges.length===0){
+    oc.innerHTML='<div style="color:var(--dim);padding:8px">暂无优化数据</div>';
+  }else{
+    D.optChanges.forEach(c=>{
+      const d=document.createElement('div');d.className='opt-item';
+      d.innerHTML=`<span class="opt-badge ${c.cls}">${c.action}</span><span>${c.detail}</span>`;
+      oc.appendChild(d);
+    });
+  }
 
   // Compare
-  const ccAnnual=D.ccPositions.reduce((s,p)=>{const d=days(p.sellDate,p.expiry);return s+(d>0?(p.premium/d)*365:0)},0);
-  const cspAnnual=D.cspPositions.reduce((s,p)=>{const d=days(p.sellDate,p.expiry);return s+(d>0?(p.premium/d)*365:0)},0);
+  const ccAnnual=D.ccPositions.reduce((s,p)=>{const d=days(p.sellDate||today,p.expiry);return s+(d>0?(num(p.premium,0)/d)*365:0)},0);
+  const cspAnnual=D.cspPositions.reduce((s,p)=>{const d=days(p.sellDate||today,p.expiry);return s+(d>0?(num(p.premium,0)/d)*365:0)},0);
   const curIncome=Math.round(ccAnnual+cspAnnual);
   const curYield=totalCap>0?(curIncome/totalCap*100):0;
-  const optAI=D.optEstimates.reduce((s,e)=>s+e.monthlyPremium*12,0);
-  const optTC=D.optEstimates.reduce((s,e)=>s+e.cost,0);
+  const optAI=D.optEstimates.reduce((s,e)=>s+num(e.monthlyPremium,0)*12,0);
+  const optTC=D.optEstimates.reduce((s,e)=>s+num(e.cost,0),0);
   document.getElementById('cur-income').textContent=fmt(curIncome);
   document.getElementById('cur-yield').textContent='组合年化 '+fmtPct(curYield);
   document.getElementById('opt-income').textContent=fmt(optAI);
