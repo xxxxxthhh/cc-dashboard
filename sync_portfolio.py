@@ -97,7 +97,6 @@ def _extract_cash(text: str) -> int:
 
 def _extract_table(text: str, heading: str) -> list[list[str]]:
     """Return rows (list of columns) for the markdown table under a '## {heading}' section."""
-    # Find section
     pat = rf"^##\s+{re.escape(heading)}\s*$"
     m = re.search(pat, text, flags=re.MULTILINE)
     if not m:
@@ -106,7 +105,7 @@ def _extract_table(text: str, heading: str) -> list[list[str]]:
 
     # table starts at first line beginning with |
     lines = text[start:].splitlines()
-    table_lines = []
+    table_lines: list[str] = []
     in_table = False
     for line in lines:
         if line.strip().startswith("## "):
@@ -123,13 +122,46 @@ def _extract_table(text: str, heading: str) -> list[list[str]]:
 
     # Skip header + separator
     body = table_lines[2:]
-    rows = []
+    rows: list[list[str]] = []
     for line in body:
         parts = [p.strip() for p in line.strip().strip("|").split("|")]
         if all(not p for p in parts):
             continue
         rows.append(parts)
     return rows
+
+
+def _parse_mmdd_in_text(s: str) -> tuple[int, int] | None:
+    """Extract M/D from a string like '✅ 3/2 开仓'"""
+    if not s:
+        return None
+    m = re.search(r"\b(\d{1,2})/(\d{1,2})\b", s)
+    if not m:
+        return None
+    return int(m.group(1)), int(m.group(2))
+
+
+def _parse_premium_from_note(note: str) -> int:
+    """Best-effort parse realized premium/profit from Chinese notes.
+
+    Examples:
+      - '获利$307' -> 307
+      - '$120全收' -> 120
+      - '权利金全收' (no amount) -> 0
+    """
+    if not note:
+        return 0
+    note = note.replace(",", "")
+    m = re.search(r"获利\s*\$\s*([\d.]+)", note)
+    if m:
+        return int(float(m.group(1)))
+    m = re.search(r"\$\s*([\d.]+)\s*全收", note)
+    if m:
+        return int(float(m.group(1)))
+    m = re.search(r"权利金\s*\$\s*([\d.]+)", note)
+    if m:
+        return int(float(m.group(1)))
+    return 0
 
 
 def main():
@@ -151,11 +183,13 @@ def main():
         ticker = r[0]
         shares = _parse_int(r[1]) or 0
         price = _parse_price(r[2])
+        note = r[5] if len(r) >= 6 else ""
         stock_holdings.append({
             "ticker": ticker,
             "shares": shares,
             "cost": price or 0,  # 缺 cost basis，用现价占位
             "canCC": shares >= 100,
+            "note": note,
         })
 
     # CC 持仓
@@ -171,12 +205,19 @@ def main():
         contracts = _parse_int(r[3])
         if not ticker or strike is None or not expiry or not contracts:
             continue
+
+        # sellDate 可能在“状态”里带着（如果没有就留空，前端会 fallback）
+        status = r[6] if len(r) >= 7 else ""
+        sd = _parse_mmdd_in_text(status)
+        sell_date = datetime(year, sd[0], sd[1]).strftime("%Y-%m-%d") if sd else None
+
         cc_positions.append({
             "ticker": ticker,
             "strike": strike,
             "expiry": expiry,
             "contracts": contracts,
-            # 下面字段可能缺失，decision_engine 会自动跳过止盈追踪
+            "sellDate": sell_date,
+            # decision_engine / dashboard 允许缺失：premium / costPerShare
             "premium": 0,
         })
 
@@ -191,16 +232,74 @@ def main():
         strike = _parse_price(r[1])
         expiry = _parse_expiry(r[2], year)
         contracts = _parse_int(r[3])
+        entry = _parse_price(r[4])
         premium = _parse_money_to_int(r[5])
+        status = r[6] if len(r) >= 7 else ""
         if not ticker or strike is None or not expiry or not contracts:
             continue
+
+        sd = _parse_mmdd_in_text(status)
+        sell_date = datetime(year, sd[0], sd[1]).strftime("%Y-%m-%d") if sd else None
+
         csp_positions.append({
             "ticker": ticker,
             "strike": strike,
             "expiry": expiry,
             "contracts": contracts,
+            "sellDate": sell_date,
+            "entryPrice": entry,
             "premium": premium or 0,
             "collateral": int(abs(contracts) * strike * 100),
+        })
+
+    # 已清仓记录 -> closedTrades（用于 dashboard 已实现收益）
+    closed_rows = _extract_table(text, "已清仓记录")
+    closed_trades = []
+    for r in closed_rows:
+        # | 标的 | 操作 | 日期 | 备注 |
+        if len(r) < 3:
+            continue
+        ticker = r[0]
+        action = r[1] if len(r) >= 2 else ""
+        dt = r[2] if len(r) >= 3 else ""
+        note = r[3] if len(r) >= 4 else ""
+
+        # type + strike
+        typ = "CSP" if "CSP" in action else "CC" if "CC" in action else ""
+        m = re.search(r"\$\s*([\d.]+)", action)
+        strike = float(m.group(1)) if m else None
+        close_date = _parse_expiry(dt, year) or updated_at
+
+        assigned = "assign" in action.lower() or "被call" in note or "assign" in note.lower()
+        premium = _parse_premium_from_note(note)
+
+        if not ticker or not typ:
+            continue
+        closed_trades.append({
+            "ticker": ticker,
+            "type": typ,
+            "strike": strike or 0,
+            "openDate": close_date,  # unknown; keep UI stable
+            "closeDate": close_date,
+            "premium": premium,
+            "assigned": bool(assigned),
+        })
+
+    # wheelCycles: 用当前持仓做一个轻量的状态卡（不追求精确，只求可读）
+    wheel_cycles = []
+    for p in csp_positions:
+        wheel_cycles.append({
+            "ticker": p["ticker"],
+            "phase": "csp",
+            "detail": f"PUT ${p['strike']} · 到期 {p['expiry']}",
+            "note": "卖 PUT 收租，接到就转卖 CC",
+        })
+    for p in cc_positions:
+        wheel_cycles.append({
+            "ticker": p["ticker"],
+            "phase": "cc",
+            "detail": f"CALL ${p['strike']} · 到期 {p['expiry']}",
+            "note": "卖 CC 收租，被 call 走就转 CSP",
         })
 
     portfolio = {
@@ -209,8 +308,8 @@ def main():
         "ccPositions": cc_positions,
         "cspPositions": csp_positions,
         "idlePositions": stock_holdings,
-        "closedTrades": [],
-        "wheelCycles": [],
+        "closedTrades": closed_trades,
+        "wheelCycles": wheel_cycles,
     }
 
     OUTPUT.write_text(json.dumps(portfolio, indent=2, ensure_ascii=False), encoding="utf-8")
