@@ -270,8 +270,12 @@ def main():
         sd = _parse_mmdd_in_text(status)
         sell_date = datetime(year, sd[0], sd[1]).strftime("%Y-%m-%d") if sd else None
 
-        # 从旧日志中找“真实开仓权利金”（如果找不到就留 0，不瞎推）
-        entry_credit = find_cc_entry_credit_from_logs(ticker, strike, contracts) or 0
+        # 从旧日志中找“真实开仓权利金”；找不到就从状态列里回填（如“开仓 $719”）
+        entry_credit = (
+            find_cc_entry_credit_from_logs(ticker, strike, contracts)
+            or _parse_money_to_int(status)
+            or 0
+        )
 
         cc_positions.append({
             "ticker": ticker,
