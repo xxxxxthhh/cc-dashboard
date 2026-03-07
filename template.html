@@ -177,28 +177,28 @@
                             grid: { display: false },
                             ticks: { color: '#6e7681' }
                         }
-                    },
-                    plugins: [{
-                        id: 'targetLine',
-                        afterDatasetsDraw: (chart) => {
-                            const ctx = chart.ctx;
-                            const yAxis = chart.scales.y;
-                            const y = yAxis.getPixelForValue(target);
-                            ctx.save();
-                            ctx.strokeStyle = '#58a6ff';
-                            ctx.lineWidth = 2;
-                            ctx.setLineDash([5, 5]);
-                            ctx.beginPath();
-                            ctx.moveTo(chart.chartArea.left, y);
-                            ctx.lineTo(chart.chartArea.right, y);
-                            ctx.stroke();
-                            ctx.fillStyle = '#58a6ff';
-                            ctx.font = '12px sans-serif';
-                            ctx.fillText('目标 $1000', chart.chartArea.right - 70, y - 5);
-                            ctx.restore();
-                        }
-                    }]
-                }
+                    }
+                },
+                plugins: [{
+                    id: 'targetLine',
+                    afterDatasetsDraw: (chart) => {
+                        const ctx = chart.ctx;
+                        const yAxis = chart.scales.y;
+                        const y = yAxis.getPixelForValue(target);
+                        ctx.save();
+                        ctx.strokeStyle = '#58a6ff';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([5, 5]);
+                        ctx.beginPath();
+                        ctx.moveTo(chart.chartArea.left, y);
+                        ctx.lineTo(chart.chartArea.right, y);
+                        ctx.stroke();
+                        ctx.fillStyle = '#58a6ff';
+                        ctx.font = '12px sans-serif';
+                        ctx.fillText('目标 $1000', chart.chartArea.right - 70, y - 5);
+                        ctx.restore();
+                    }
+                }]
             });
             
             // Render stats
