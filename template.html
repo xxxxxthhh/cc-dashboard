@@ -147,7 +147,7 @@
             const chartBars = document.getElementById('chart-bars');
             
             const target = 1000;
-            const maxAmount = Math.max(...weeks.map(w => weeklyData[w].total), target * 1.2);
+            const maxAmount = Math.max(...weeks.map(w => weeklyData[w].total), target) * 1.1; // 最大值的 1.1 倍留白
             const targetHeight = (target / maxAmount) * 100;
             
             chartBars.innerHTML = `<div class="target-line-h" style="bottom: ${targetHeight}%;"></div>`;
