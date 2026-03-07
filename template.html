@@ -183,7 +183,10 @@
             data.closedTrades.forEach(t => {
                 real.innerHTML += `
                     <div class="trade-item">
-                        <span class="trade-ticker">${t.ticker} ${t.type || ''}</span>
+                        <div>
+                            <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>
+                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${t.closeDate || ''}</div>
+                        </div>
                         <span class="trade-profit">+$${t.premium}</span>
                     </div>
                 `;
