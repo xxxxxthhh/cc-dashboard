@@ -1,617 +1,198 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wheel Strategy Dashboard</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0a0e14;--card:#12171f;--border:#1e2733;--text:#c9d1d9;--dim:#6e7681;--green:#3fb950;--red:#f85149;--blue:#58a6ff;--yellow:#d29922;--purple:#bc8cff;--cyan:#39d2c0;--green-bg:rgba(63,185,80,.1);--red-bg:rgba(248,81,73,.1);--blue-bg:rgba(88,166,255,.1);--yellow-bg:rgba(210,153,34,.1);--purple-bg:rgba(188,140,255,.1);--cyan-bg:rgba(57,210,192,.1)}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;padding:20px;max-width:1200px;margin:0 auto;line-height:1.5}
-#lock-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:80vh;animation:fadeIn .5s}
-#lock-screen h1{font-size:56px;margin-bottom:24px}
-#lock-screen input{background:var(--card);border:2px solid var(--border);border-radius:12px;color:var(--text);font-size:28px;padding:14px 24px;width:200px;text-align:center;letter-spacing:10px;outline:none;transition:border-color .2s}
-#lock-screen input:focus{border-color:var(--blue)}
-#lock-screen .error{color:var(--red);font-size:13px;margin-top:8px;height:20px}
-#dashboard{display:none;animation:fadeIn .6s}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-/* Header */
-.header{margin-bottom:28px}
-.header h1{font-size:26px;font-weight:700;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline}
-.header .sub{color:var(--dim);font-size:13px;margin-top:4px}
-
-/* Nav tabs */
-.nav{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0;overflow-x:auto}
-.nav button{background:none;border:none;color:var(--dim);font-size:13px;padding:10px 16px;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
-.nav button:hover{color:var(--text)}
-.nav button.active{color:var(--blue);border-bottom-color:var(--blue)}
-
-/* Sections */
-.section{display:none}.section.active{display:block;animation:fadeIn .3s}
-
-/* Summary grid */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;transition:transform .15s,border-color .15s}
-.card:hover{transform:translateY(-2px);border-color:rgba(88,166,255,.3)}
-.card .label{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.card .value{font-size:22px;font-weight:700}
-.card .sub-value{font-size:11px;color:var(--dim);margin-top:2px}
-.green{color:var(--green)}.red{color:var(--red)}.blue{color:var(--blue)}.yellow{color:var(--yellow)}.purple{color:var(--purple)}.cyan{color:var(--cyan)}
-
-/* Tables */
-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px;font-size:13px}
-th{background:rgba(30,39,51,.8);color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;font-weight:600}
-td{padding:10px 14px;border-top:1px solid var(--border)}
-tr:hover{background:rgba(88,166,255,.03)}
-.ticker{font-weight:700;color:var(--text)}
-
-/* Tags */
-.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.tag-green{background:var(--green-bg);color:var(--green)}
-.tag-red{background:var(--red-bg);color:var(--red)}
-.tag-blue{background:var(--blue-bg);color:var(--blue)}
-.tag-yellow{background:var(--yellow-bg);color:var(--yellow)}
-.tag-purple{background:var(--purple-bg);color:var(--purple)}
-.tag-cyan{background:var(--cyan-bg);color:var(--cyan)}
-.tag-dim{background:rgba(110,118,129,.1);color:var(--dim)}
-
-/* DTE bar */
-.dte-bar{width:100%;height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px}
-.dte-fill{height:100%;border-radius:2px;transition:width .3s}
-
-/* Wheel tracker */
-.wheel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:24px}
-.wheel-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
-.wheel-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
-.wheel-card.phase-csp::before{background:linear-gradient(90deg,var(--purple),var(--blue))}
-.wheel-card.phase-cc::before{background:linear-gradient(90deg,var(--green),var(--cyan))}
-.wheel-card.phase-cc-exit::before{background:linear-gradient(90deg,var(--yellow),var(--red))}
-.wheel-card.phase-cc-locked::before{background:linear-gradient(90deg,var(--red),var(--yellow))}
-.wheel-card .wc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.wheel-card .wc-ticker{font-size:18px;font-weight:700}
-.wheel-card .wc-detail{color:var(--dim);font-size:12px}
-.wheel-card .wc-note{font-size:12px;margin-top:4px}
-
-/* Phase flow */
-.phase-flow{display:flex;align-items:center;gap:6px;margin:20px 0}
-.phase-step{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;opacity:.3}
-.phase-step.active{opacity:1}
-.phase-step.step-csp{background:var(--purple-bg);color:var(--purple)}
-.phase-step.step-assign{background:var(--yellow-bg);color:var(--yellow)}
-.phase-step.step-cc{background:var(--green-bg);color:var(--green)}
-.phase-arrow{color:var(--dim);font-size:10px;opacity:.4}
-
-/* Section headers */
-.sh{display:flex;align-items:center;gap:10px;margin:28px 0 14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
-.sh h2{font-size:15px;font-weight:600;color:var(--text)}
-.sh .count{font-size:12px;color:var(--dim);background:var(--border);padding:2px 8px;border-radius:10px}
-
-/* Opt changes */
-.opt-item{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:13px;border-bottom:1px solid var(--border)}
-.opt-item:last-child{border-bottom:none}
-.opt-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;min-width:56px;text-align:center}
-.opt-badge.done{background:var(--green-bg);color:var(--green)}
-.opt-badge.active{background:var(--blue-bg);color:var(--blue)}
-.opt-badge.pending{background:var(--yellow-bg);color:var(--yellow)}
-
-/* Compare */
-.compare{display:grid;grid-template-columns:1fr 50px 1fr;gap:0;margin:20px 0}
-.compare-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:24px;text-align:center}
-.compare-arrow{display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--blue)}
-.compare-box .big{font-size:30px;font-weight:700;margin:8px 0}
-.compare-box .sub{color:var(--dim);font-size:12px}
-
-/* Note */
-.note-box{background:var(--card);border-left:3px solid var(--yellow);padding:12px 16px;margin:16px 0;font-size:13px;color:var(--yellow);border-radius:0 12px 12px 0}
-
-/* Responsive */
-@media(max-width:640px){
-  body{padding:12px}
-  .grid{grid-template-columns:repeat(2,1fr);gap:8px}
-  .card .value{font-size:18px}
-  .wheel-grid{grid-template-columns:1fr}
-  table{font-size:12px}
-  th,td{padding:8px 10px}
-  .compare{grid-template-columns:1fr;gap:8px}
-  .compare-arrow{transform:rotate(90deg)}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theta Gang Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0e14; color: #c9d1d9; padding: 20px; line-height: 1.5; }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { font-size: 28px; margin-bottom: 24px; background: linear-gradient(135deg, #58a6ff, #bc8cff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        
+        /* Lock screen */
+        #lock { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; }
+        #lock input { background: #12171f; border: 2px solid #1e2733; border-radius: 8px; color: white; font-size: 18px; padding: 12px 20px; width: 200px; text-align: center; outline: none; }
+        #lock input:focus { border-color: #58a6ff; }
+        #lock button { background: #58a6ff; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; margin-top: 12px; font-size: 14px; }
+        #lock .error { color: #f85149; font-size: 13px; margin-top: 8px; }
+        
+        /* Dashboard */
+        #dashboard { display: none; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Stats grid */
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .stat-card { background: #12171f; border: 1px solid #1e2733; border-radius: 12px; padding: 16px; }
+        .stat-card .label { color: #6e7681; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-card .value { font-size: 24px; font-weight: 700; }
+        .stat-card .sub { font-size: 12px; color: #6e7681; margin-top: 4px; }
+        .green { color: #3fb950; }
+        .red { color: #f85149; }
+        .blue { color: #58a6ff; }
+        .purple { color: #bc8cff; }
+        .cyan { color: #39d2c0; }
+        
+        /* Section */
+        .section { margin-bottom: 24px; }
+        .section h2 { font-size: 14px; color: #6e7681; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #1e2733; }
+        
+        /* Position cards */
+        .pos-card { background: #12171f; border: 1px solid #1e2733; border-left: 4px solid #444; border-radius: 0 8px 8px 0; padding: 14px; margin-bottom: 10px; transition: transform 0.15s; }
+        .pos-card:hover { transform: translateX(4px); }
+        .pos-card.CC { border-left-color: #39d2c0; }
+        .pos-card.CSP { border-left-color: #bc8cff; }
+        .pos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .pos-ticker { font-size: 16px; font-weight: 700; }
+        .pos-premium { font-size: 16px; font-weight: 700; color: #3fb950; }
+        .pos-details { display: flex; justify-content: space-between; font-size: 12px; color: #6e7681; margin-bottom: 8px; }
+        
+        /* Progress bars */
+        .progress-row { margin: 8px 0; }
+        .progress-label { font-size: 11px; color: #6e7681; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .progress-bg { height: 6px; background: #1e2733; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+        
+        /* Trade list */
+        .trade-item { display: flex; justify-content: space-between; padding: 10px 14px; background: #12171f; border: 1px solid #1e2733; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
+        .trade-ticker { font-weight: 700; }
+        .trade-profit { color: #3fb950; font-weight: 700; }
+    </style>
 </head>
 <body>
-
-<div id="lock-screen">
-<h1>🔒</h1>
-<input type="password" id="pwd" maxlength="4" placeholder="····" autofocus>
-<div class="error" id="pwd-error"></div>
-</div>
-
-<div id="dashboard">
-<div class="header">
-<h1>🐴 Wheel Strategy Dashboard</h1>
-<p class="sub">Theta Gang 收租追踪 · <span id="update-date">—</span></p>
-</div>
-
-<div class="nav" id="nav">
-<button class="active" data-tab="overview">总览</button>
-<button data-tab="wheel">Wheel 追踪</button>
-<button data-tab="cc">Covered Calls</button>
-<button data-tab="csp">Cash-Secured Puts</button>
-<button data-tab="closed">已实现收益</button>
-<button data-tab="idle">闲置仓位</button>
-<button data-tab="decision">🎯 决策</button>
-<button data-tab="optimize">优化方案</button>
-</div>
-
-<!-- Overview -->
-<div class="section active" id="tab-overview">
-<div class="grid" id="summary-cards"></div>
-<div class="sh"><h2>🔄 Wheel 状态一览</h2></div>
-<div class="wheel-grid" id="wheel-overview"></div>
-</div>
-
-<!-- Wheel Tracker -->
-<div class="section" id="tab-wheel">
-<div class="phase-flow">
-<div class="phase-step step-csp">Sell Put</div><div class="phase-arrow">→</div>
-<div class="phase-step step-assign">Assign 接股</div><div class="phase-arrow">→</div>
-<div class="phase-step step-cc">Sell Call</div><div class="phase-arrow">→</div>
-<div class="phase-step step-assign">Assign 出股</div><div class="phase-arrow">→</div>
-<div class="phase-step step-csp">Sell Put ♻️</div>
-</div>
-<div class="wheel-grid" id="wheel-cards"></div>
-</div>
-
-<!-- CC -->
-<div class="section" id="tab-cc">
-<div class="sh"><h2>📊 Covered Call 持仓</h2><span class="count" id="cc-count">0</span></div>
-<table id="cc-table"><thead><tr>
-<th>标的</th><th>Strike</th><th>开仓</th><th>到期</th><th>DTE</th><th>权利金</th><th>成本</th><th>收益率</th><th>年化</th><th>状态</th>
-</tr></thead><tbody></tbody></table>
-</div>
-
-<!-- CSP -->
-<div class="section" id="tab-csp">
-<div class="sh"><h2>💎 Cash-Secured Put 持仓</h2><span class="count" id="csp-count">0</span></div>
-<table id="csp-table"><thead><tr>
-<th>标的</th><th>Strike</th><th>开仓</th><th>到期</th><th>DTE</th><th>权利金</th><th>保证金</th><th>收益率</th><th>年化</th><th>状态</th>
-</tr></thead><tbody></tbody></table>
-</div>
-
-<!-- Closed -->
-<div class="section" id="tab-closed">
-<div class="grid" id="realized-cards"></div>
-<div class="sh"><h2>💰 已平仓记录</h2><span class="count" id="closed-count">0</span></div>
-<table id="closed-table"><thead><tr>
-<th>标的</th><th>类型</th><th>Strike</th><th>开仓</th><th>平仓</th><th>天数</th><th>权利金</th><th>结果</th>
-</tr></thead><tbody></tbody></table>
-</div>
-
-<!-- Idle -->
-<div class="section" id="tab-idle">
-<div class="sh"><h2>💤 未开仓位（闲置资金）</h2></div>
-<table id="idle-table"><thead><tr>
-<th>标的</th><th>股数</th><th>均价</th><th>市值</th><th>可开CC</th><th>备注</th>
-</tr></thead><tbody></tbody></table>
-</div>
-
-<!-- Decision -->
-<div class="section" id="tab-decision">
-<div class="grid" id="decision-summary"></div>
-
-<div class="sh"><h2>⚡ 本周操作建议</h2></div>
-<div id="weekly-plan" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:24px"></div>
-
-<div class="sh"><h2>📊 80% 止盈追踪</h2><span class="count" id="profit-count">0</span></div>
-<table id="profit-table"><thead><tr>
-<th>标的</th><th>类型</th><th>Strike</th><th>到期</th><th>开仓权利金</th><th>当前价值</th><th>盈利%</th><th>信号</th>
-</tr></thead><tbody></tbody></table>
-
-<div class="sh"><h2>⏰ 到期提醒</h2><span class="count" id="expiry-count">0</span></div>
-<table id="expiry-table"><thead><tr>
-<th>标的</th><th>类型</th><th>Strike</th><th>到期</th><th>DTE</th><th>权利金</th><th>状态</th><th>建议</th><th>下一步</th>
-</tr></thead><tbody></tbody></table>
-
-<div class="sh"><h2>🎯 下周最优 CSP 候选</h2><span class="count" id="csp-cand-count">0</span></div>
-<table id="csp-cand-table"><thead><tr>
-<th>标的</th><th>现价</th><th>Strike</th><th>OTM%</th><th>DTE</th><th>IV</th><th>权利金</th><th>年化</th><th>OI</th><th>评分</th>
-</tr></thead><tbody></tbody></table>
-
-<div class="sh"><h2>📈 CC 开仓候选（未覆盖持仓）</h2><span class="count" id="cc-cand-count">0</span></div>
-<table id="cc-cand-table"><thead><tr>
-<th>标的</th><th>现价</th><th>Strike</th><th>OTM%</th><th>DTE</th><th>IV</th><th>权利金</th><th>年化</th><th>OI</th>
-</tr></thead><tbody></tbody></table>
-
-<div class="sh"><h2>📊 IV 排行</h2></div>
-<div class="grid" id="iv-ranking-grid"></div>
-
-<div class="sh"><h2>💰 资金效率</h2></div>
-<div class="grid" id="capital-eff-grid"></div>
-</div>
-
-<!-- Optimize -->
-<div class="section" id="tab-optimize">
-<div class="note-box">集中到高 IV 标的，最大化 Wheel 收租效率。短周期 5-7 DTE 优先。</div>
-<div class="sh"><h2>🔄 操作进度</h2></div>
-<div id="opt-changes" style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:24px"></div>
-<div class="sh"><h2>📈 当前 vs 优化后</h2></div>
-<div class="compare">
-<div class="compare-box"><div class="sub">当前年化收入</div><div class="big yellow" id="cur-income">—</div><div class="sub" id="cur-yield">—</div></div>
-<div class="compare-arrow">→</div>
-<div class="compare-box"><div class="sub">优化后年化收入</div><div class="big green" id="opt-income">—</div><div class="sub" id="opt-yield">—</div></div>
-</div>
-</div>
-</div>
-
-<script>
-const ENC = __ENCRYPTED_DATA__;
-
-function b64(s){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
-
-async function decrypt(pwd){
-  const enc=new TextEncoder();
-  const km=await crypto.subtle.importKey('raw',enc.encode(pwd),{name:'PBKDF2'},false,['deriveKey']);
-  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(ENC.salt),iterations:100000,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
-  const ct=b64(ENC.data),tag=b64(ENC.tag);
-  const combined=new Uint8Array(ct.length+tag.length);
-  combined.set(ct);combined.set(tag,ct.length);
-  return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(ENC.iv)},key,combined)));
-}
-
-document.getElementById('pwd').addEventListener('input',async function(){
-  if(this.value.length===4){
-    try{
-      const data=await decrypt(this.value);
-      document.getElementById('lock-screen').style.display='none';
-      document.getElementById('dashboard').style.display='block';
-      render(data);
-    }catch(e){
-      document.getElementById('pwd-error').textContent='密码错误';
-      this.value='';
-    }
-  }
-});
-
-// Tab navigation
-document.getElementById('nav').addEventListener('click',e=>{
-  if(e.target.tagName!=='BUTTON')return;
-  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  e.target.classList.add('active');
-  document.getElementById('tab-'+e.target.dataset.tab).classList.add('active');
-});
-
-const num=(x,d=0)=>{const n=Number(x);return Number.isFinite(n)?n:d;}
-const mmdd=s=>(typeof s==='string'&&s.length>=5)?s.slice(5):'—';
-const fmt=n=>'$'+num(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
-const fmtPct=n=>num(n).toFixed(1)+'%';
-const days=(a,b)=>{
-  const da=new Date(a),db=new Date(b);
-  const diff=(db-da)/864e5;
-  return Number.isFinite(diff)?Math.round(diff):NaN;
-};
-
-function dteTag(dte,total){
-  dte=num(dte,0);total=num(total,0);
-  if(total<=0) total=Math.max(dte,1);
-  const pct=Math.max(0,Math.min(100,(1-dte/total)*100));
-  let color=dte<=3?'var(--red)':dte<=7?'var(--yellow)':'var(--green)';
-  return `<div>${dte}天</div><div class="dte-bar"><div class="dte-fill" style="width:${pct}%;background:${color}"></div></div>`;
-}
-
-function statusTag(text,type){return `<span class="tag tag-${type}">${text}</span>`}
-
-function render(D){
-  // Normalize optional fields (portfolio_data.json 允许最小字段集)
-  D=D||{};
-  D.updatedAt=D.updatedAt||new Date().toISOString().slice(0,10);
-  D.ccPositions=D.ccPositions||[];
-  D.cspPositions=D.cspPositions||[];
-  D.closedTrades=D.closedTrades||[];
-  D.wheelCycles=D.wheelCycles||[];
-  D.idlePositions=D.idlePositions||[];
-  D.optChanges=D.optChanges||[];
-  D.optEstimates=D.optEstimates||[];
-
-  const today=D.updatedAt;
-  document.getElementById('update-date').textContent=today;
-
-  const idleMap={};
-  D.idlePositions.forEach(p=>{idleMap[p.ticker]=p;});
-
-  // === Summary ===
-  let totalCCPremium=0,totalCSPPremium=0,totalRealized=0,totalCCCost=0,totalCSPCollateral=0,totalIdleCost=0;
-  D.ccPositions.forEach(p=>{
-    totalCCPremium+=num(p.premium,0);
-    const idle=idleMap[p.ticker];
-    const cps=num(p.costPerShare, idle? idle.cost : p.strike);
-    const contracts=Math.abs(num(p.contracts,-1));
-    totalCCCost+=cps*100*contracts;
-  });
-  D.cspPositions.forEach(p=>{
-    totalCSPPremium+=num(p.premium,0);
-    const strike=num(p.strike,0);
-    const contracts=Math.abs(num(p.contracts,-1));
-    totalCSPCollateral+=num(p.collateral, contracts*strike*100);
-  });
-  D.closedTrades.forEach(t=>totalRealized+=num(t.premium,0));
-  D.idlePositions.forEach(p=>totalIdleCost+=num(p.shares,0)*num(p.cost,0));
-
-  const activePremium=totalCCPremium+totalCSPPremium;
-  const totalCap=totalCCCost+totalCSPCollateral+totalIdleCost;
-  const daysYTD=days('2026-01-01',today);
-  const annRealized=daysYTD>0?totalRealized*(365/daysYTD):0;
-
-  const missingCC=D.ccPositions.filter(p=>num(p.premium,0)<=0).length;
-  const ccSub=`CC ${fmt(Math.round(totalCCPremium))}`+(missingCC?` (缺${missingCC}张开仓价)`:``);
-  const cards=[
-    {label:'活跃权利金',value:fmt(Math.round(activePremium)),cls:'green',sub:`${ccSub} + CSP ${fmt(Math.round(totalCSPPremium))}`},
-    {label:'YTD 已实现',value:fmt(Math.round(totalRealized)),cls:'green',sub:`${D.closedTrades.length}笔 · 年化推算 ${fmt(Math.round(annRealized))}`},
-    {label:'活跃CC',value:D.ccPositions.length+'张',cls:'cyan',sub:fmt(Math.round(totalCCCost))+' 覆盖'},
-    {label:'活跃CSP',value:D.cspPositions.length+'张',cls:'purple',sub:fmt(Math.round(totalCSPCollateral))+' 保证金'},
-    {label:'Wheel 标的',value:D.wheelCycles.length+'个',cls:'blue',sub:'CSP '+D.wheelCycles.filter(w=>w.phase==='csp').length+' · CC '+D.wheelCycles.filter(w=>w.phase.startsWith('cc')).length},
-    {label:'闲置资金',value:fmt(Math.round(totalIdleCost)),cls:'yellow',sub:D.idlePositions.length+'个仓位'}
-  ];
-  const sc=document.getElementById('summary-cards');
-  cards.forEach(c=>{
-    const d=document.createElement('div');d.className='card';
-    d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div><div class="sub-value">${c.sub||''}</div>`;
-    sc.appendChild(d);
-  });
-
-  // === Wheel Overview (on overview tab) ===
-  renderWheelCards(D.wheelCycles,'wheel-overview');
-
-  // === Wheel Tracker tab ===
-  renderWheelCards(D.wheelCycles,'wheel-cards');
-
-  // === CC Table ===
-  document.getElementById('cc-count').textContent=D.ccPositions.length+'张';
-  const ccTb=document.querySelector('#cc-table tbody');
-  D.ccPositions.forEach(p=>{
-    const sellDate=p.sellDate||today;
-    const totalDte=days(sellDate,p.expiry);
-    const dte=days(today,p.expiry);
-    const idle=idleMap[p.ticker];
-    const cps=num(p.costPerShare, idle? idle.cost : p.strike);
-    const cost100=cps*100;
-    const yPer=cost100>0?(num(p.premium,0)/cost100)*100:0;
-    const ann=totalDte>0?yPer*(365/totalDte):0;
-    let st,sc2;
-    if(dte<=0){st='已到期';sc2='dim'}
-    else if(dte<=3){st='⚠️ 即将到期';sc2='yellow'}
-    else if(ann>30){st='高收益';sc2='green'}
-    else if(ann>15){st='正常';sc2='green'}
-    else{st='偏低';sc2='yellow'}
-    const prem=num(p.premium,0);
-    const premText=prem>0?fmt(prem):'—';
-    const yPerText=prem>0?fmtPct(yPer):'—';
-    const annText=prem>0?fmtPct(ann):'—';
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${premText}</td><td>${fmt(Math.round(cost100))}</td><td>${yPerText}</td><td><strong>${annText}</strong></td><td>${statusTag(st,sc2)}</td>`;
-    ccTb.appendChild(tr);
-  });
-
-  // === CSP Table ===
-  document.getElementById('csp-count').textContent=D.cspPositions.length+'张';
-  const cspTb=document.querySelector('#csp-table tbody');
-  D.cspPositions.forEach(p=>{
-    const sellDate=p.sellDate||today;
-    const totalDte=days(sellDate,p.expiry);
-    const dte=days(today,p.expiry);
-    const strike=num(p.strike,0);
-    const contracts=Math.abs(num(p.contracts,-1));
-    const collateral=num(p.collateral, contracts*strike*100);
-    const yPer=collateral>0?(num(p.premium,0)/collateral)*100:0;
-    const ann=totalDte>0?yPer*(365/totalDte):0;
-    let st,sc2;
-    if(dte<=0){st='已到期';sc2='dim'}
-    else if(dte<=3){st='⚠️ 即将到期';sc2='yellow'}
-    else if(ann>30){st='高收益';sc2='purple'}
-    else{st='正常';sc2='green'}
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>$${p.strike}</td><td>${mmdd(sellDate)}</td><td>${mmdd(p.expiry)}</td><td>${dteTag(Math.max(0,num(dte,0)),totalDte)}</td><td class="green">${fmt(p.premium)}</td><td>${fmt(collateral)}</td><td>${fmtPct(yPer)}</td><td><strong>${fmtPct(ann)}</strong></td><td>${statusTag(st,sc2)}</td>`;
-    cspTb.appendChild(tr);
-  });
-
-  // === Closed Trades ===
-  document.getElementById('closed-count').textContent=D.closedTrades.length+'笔';
-  const rCards=[
-    {label:'YTD 已实现收益',value:fmt(Math.round(totalRealized)),cls:'green'},
-    {label:'已平仓笔数',value:D.closedTrades.length+'笔',cls:'blue'},
-    {label:'年化推算',value:fmt(Math.round(annRealized)),cls:'green'}
-  ];
-  const rc=document.getElementById('realized-cards');
-  rCards.forEach(c=>{
-    const d=document.createElement('div');d.className='card';
-    d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>`;
-    rc.appendChild(d);
-  });
-  const ctb=document.querySelector('#closed-table tbody');
-  D.closedTrades.forEach(t=>{
-    const d=days(t.openDate,t.closeDate);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${t.ticker}</td><td>${statusTag(t.type,t.type==='CC'?'cyan':'purple')}</td><td>$${t.strike}</td><td>${t.openDate.slice(5)}</td><td>${t.closeDate.slice(5)}</td><td>${d}天</td><td class="green">${fmt(t.premium)}</td><td>${statusTag(t.assigned?'被Assign':'到期归零',t.assigned?'yellow':'green')}</td>`;
-    ctb.appendChild(tr);
-  });
-
-  // === Idle ===
-  const itb=document.querySelector('#idle-table tbody');
-  D.idlePositions.forEach(p=>{
-    const mv=num(p.shares,0)*num(p.cost,0);
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td class="ticker">${p.ticker}</td><td>${num(p.shares,0)}</td><td>$${num(p.cost,0)}</td><td>${fmt(Math.round(mv))}</td><td>${p.canCC?statusTag('可以','green'):statusTag('不足100股','red')}</td><td style="color:var(--dim)">${p.note||''}</td>`;
-    itb.appendChild(tr);
-  });
-
-  // === Decision Tab ===
-  if(D.decision){
-    const dec=D.decision;
-
-    // Summary cards
-    const dsc=document.getElementById('decision-summary');
-    const ce=dec.capitalEfficiency||{};
-    const dCards=[
-      {label:'资金利用率',value:fmtPct(ce.utilization||0),cls:ce.utilization>60?'green':'yellow',sub:`部署 ${fmt(ce.deployedCapital||0)} / 总计 ${fmt(ce.totalCapital||0)}`},
-      {label:'年化收租收入',value:fmt(ce.totalAnnualPremium||0),cls:'green',sub:`CC ${fmt(ce.ccAnnualPremium||0)} + CSP ${fmt(ce.cspAnnualPremium||0)}`},
-      {label:'组合年化收益率',value:fmtPct(ce.totalYield||0),cls:ce.totalYield>20?'green':'yellow',sub:`工作资金年化 ${fmtPct(ce.workingYield||0)}`},
-      {label:'死钱占比',value:fmtPct(ce.deadMoneyPct||0),cls:ce.deadMoneyPct>10?'red':'green',sub:fmt(ce.deadMoney||0)+' 闲置'},
-      {label:'到期提醒',value:(dec.expiringAlerts||[]).length+'个',cls:'yellow',sub:'本周需关注'},
-      {label:'CSP 候选',value:(dec.cspCandidates||[]).length+'个',cls:'purple',sub:'下周可开仓'},
-    ];
-    dCards.forEach(c=>{
-      const d=document.createElement('div');d.className='card';
-      d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div><div class="sub-value">${c.sub||''}</div>`;
-      dsc.appendChild(d);
-    });
-
-    // Weekly plan
-    const wp=document.getElementById('weekly-plan');
-    const plans=dec.weeklyPlan||[];
-    if(plans.length===0){
-      wp.innerHTML='<div style="color:var(--dim);padding:8px">暂无操作建议</div>';
-    }else{
-      plans.forEach(p=>{
-        const d=document.createElement('div');d.className='opt-item';
-        const urgCls=p.urgency==='high'?'active':p.urgency==='medium'?'pending':'done';
-        const urgLabel=p.urgency==='high'?'紧急':p.urgency==='medium'?'关注':'建议';
-        const catIcon={expiry:'⏰',opportunity:'🎯',efficiency:'💰',profit:'🎯',risk:'⚠️'}[p.category]||'📋';
-        d.innerHTML=`<span class="opt-badge ${urgCls}">${urgLabel}</span><span>${catIcon} ${p.action}</span>${p.detail?'<div style="color:var(--dim);font-size:11px;margin-left:66px">→ '+p.detail+'</div>':''}`;
-        wp.appendChild(d);
-      });
-    }
-
-    // Profit tracking (80% take-profit)
-    const pa=dec.profitAlerts||[];
-    document.getElementById('profit-count').textContent=pa.length+'个';
-    const ptb=document.querySelector('#profit-table tbody');
-    if(pa.length===0){
-      const tr=document.createElement('tr');
-      tr.innerHTML='<td colspan="8" style="color:var(--dim);text-align:center">无实时数据（需 Futu OpenD 在线时采集）</td>';
-      ptb.appendChild(tr);
-    }else{
-      pa.forEach(a=>{
-        const tr=document.createElement('tr');
-        const pctCls=a.profitPct>=80?'green':a.profitPct>=0?'blue':'red';
-        const sigTag=a.signal==='take_profit'?statusTag('🎯 止盈','green'):a.signal==='approaching'?statusTag('接近','blue'):a.signal==='underwater'?statusTag('浮亏','red'):statusTag('持有','dim');
-        tr.innerHTML=`<td class="ticker">${a.ticker}</td><td>${statusTag(a.type,a.type==='CC'?'cyan':'purple')}</td><td>$${a.strike}</td><td>${a.expiry.slice(5)}</td><td class="green">${fmt(a.entryPremium)}</td><td>${fmt(a.currentValue)}</td><td class="${pctCls}"><strong>${a.profitPct>0?'+':''}${a.profitPct}%</strong></td><td>${sigTag}<div style="font-size:11px;color:var(--dim);margin-top:2px">${a.message}</div></td>`;
-        ptb.appendChild(tr);
-      });
-    }
-
-    // Expiring alerts
-    const ea=dec.expiringAlerts||[];
-    document.getElementById('expiry-count').textContent=ea.length+'个';
-    const etb=document.querySelector('#expiry-table tbody');
-    ea.forEach(a=>{
-      const tr=document.createElement('tr');
-      const urgTag=a.urgency==='high'?statusTag('紧急','red'):statusTag('关注','yellow');
-      tr.innerHTML=`<td class="ticker">${a.ticker}</td><td>${statusTag(a.type,a.type==='CC'?'cyan':'purple')}</td><td>$${a.strike}</td><td>${a.expiry.slice(5)}</td><td>${a.dte}天</td><td class="green">${fmt(a.premium)}</td><td>${urgTag}</td><td style="color:var(--dim);font-size:12px">${a.action}</td><td style="font-size:12px">${a.nextStep||''}</td>`;
-      etb.appendChild(tr);
-    });
-
-    // CSP candidates
-    const cc2=dec.cspCandidates||[];
-    document.getElementById('csp-cand-count').textContent=cc2.length+'个';
-    const cctb=document.querySelector('#csp-cand-table tbody');
-    cc2.forEach((c,i)=>{
-      const tr=document.createElement('tr');
-      const signal=c.annYield>=200?'🔥':c.annYield>=100?'💰':'👀';
-      const scoreColor=c.score>=100?'green':c.score>=50?'yellow':'dim';
-      tr.innerHTML=`<td class="ticker">${c.ticker}</td><td>$${c.price}</td><td>$${c.strike}</td><td>${c.otmPct}%</td><td>${c.dte}天</td><td>${c.iv}%</td><td class="green">$${c.premium}</td><td><strong>${c.annYield}%</strong> ${signal}</td><td>${c.oi.toLocaleString()}</td><td>${statusTag(c.score,scoreColor)}</td>`;
-      cctb.appendChild(tr);
-    });
-
-    // CC candidates
-    const ccCand=dec.ccCandidates||[];
-    document.getElementById('cc-cand-count').textContent=ccCand.length+'个';
-    const ccCandTb=document.querySelector('#cc-cand-table tbody');
-    if(ccCand.length===0){
-      const tr=document.createElement('tr');
-      tr.innerHTML='<td colspan="9" style="color:var(--dim);text-align:center">所有持仓已有 CC 覆盖 ✅</td>';
-      ccCandTb.appendChild(tr);
-    }else{
-      ccCand.forEach(c=>{
-        const tr=document.createElement('tr');
-        tr.innerHTML=`<td class="ticker">${c.ticker}</td><td>$${c.price}</td><td>$${c.strike}</td><td>${c.otmPct}%</td><td>${c.dte}天</td><td>${c.iv}%</td><td class="green">$${c.premium}</td><td><strong>${c.annYield}%</strong></td><td>${c.oi.toLocaleString()}</td>`;
-        ccCandTb.appendChild(tr);
-      });
-    }
-
-    // IV rankings (with change indicator)
-    const ivg=document.getElementById('iv-ranking-grid');
-    const ivr=dec.ivRankings||[];
-    ivr.slice(0,8).forEach(r=>{
-      const d=document.createElement('div');d.className='card';
-      const cls=r.iv>=70?'red':r.iv>=50?'yellow':'dim';
-      const signal=r.iv>=70?'🔥':r.iv>=50?'💰':'';
-      const change=r.ivChange!=null?(r.ivChange>0?`<span class="red">+${r.ivChange}%</span>`:`<span class="green">${r.ivChange}%</span>`):'';
-      d.innerHTML=`<div class="label">${r.ticker} ${signal}</div><div class="value ${cls}">${r.iv}%</div><div class="sub-value">$${r.price} ${change}</div>`;
-      ivg.appendChild(d);
-    });
-
-    // Capital efficiency
-    const ceg=document.getElementById('capital-eff-grid');
-    const ceCards=[
-      {label:'总资本',value:fmt(ce.totalCapital||0),cls:'blue'},
-      {label:'已部署',value:fmt(ce.deployedCapital||0),cls:'green',sub:fmtPct(ce.utilization||0)+' 利用率'},
-      {label:'闲置资金',value:fmt(ce.deadMoney||0),cls:ce.deadMoneyPct>10?'red':'dim'},
-      {label:'现金',value:fmt(ce.cash||0),cls:'blue'},
-    ];
-    ceCards.forEach(c=>{
-      const d=document.createElement('div');d.className='card';
-      d.innerHTML=`<div class="label">${c.label}</div><div class="value ${c.cls}">${c.value}</div>${c.sub?'<div class="sub-value">'+c.sub+'</div>':''}`;
-      ceg.appendChild(d);
-    });
-  }else{
-    // No decision data
-    const dsc=document.getElementById('decision-summary');
-    dsc.innerHTML='<div class="card" style="grid-column:1/-1"><div class="label">决策数据</div><div class="value yellow">未生成</div><div class="sub-value">运行 python decision_engine.py 生成</div></div>';
-  }
-
-  // === Optimize ===
-  const oc=document.getElementById('opt-changes');
-  if(D.optChanges.length===0){
-    oc.innerHTML='<div style="color:var(--dim);padding:8px">暂无优化数据</div>';
-  }else{
-    D.optChanges.forEach(c=>{
-      const d=document.createElement('div');d.className='opt-item';
-      d.innerHTML=`<span class="opt-badge ${c.cls}">${c.action}</span><span>${c.detail}</span>`;
-      oc.appendChild(d);
-    });
-  }
-
-  // Compare
-  const ccAnnual=D.ccPositions.reduce((s,p)=>{const d=days(p.sellDate||today,p.expiry);return s+(d>0?(num(p.premium,0)/d)*365:0)},0);
-  const cspAnnual=D.cspPositions.reduce((s,p)=>{const d=days(p.sellDate||today,p.expiry);return s+(d>0?(num(p.premium,0)/d)*365:0)},0);
-  const curIncome=Math.round(ccAnnual+cspAnnual);
-  const curYield=totalCap>0?(curIncome/totalCap*100):0;
-  const optAI=D.optEstimates.reduce((s,e)=>s+num(e.monthlyPremium,0)*12,0);
-  const optTC=D.optEstimates.reduce((s,e)=>s+num(e.cost,0),0);
-  document.getElementById('cur-income').textContent=fmt(curIncome);
-  document.getElementById('cur-yield').textContent='组合年化 '+fmtPct(curYield);
-  document.getElementById('opt-income').textContent=fmt(optAI);
-  document.getElementById('opt-yield').textContent='组合年化 '+fmtPct(optTC>0?optAI/optTC*100:0);
-}
-
-function renderWheelCards(cycles,containerId){
-  const container=document.getElementById(containerId);
-  cycles.forEach(w=>{
-    const d=document.createElement('div');
-    d.className=`wheel-card phase-${w.phase}`;
-    const phaseLabel={csp:'Sell Put',cc:'Sell Call','cc-exit':'清退中','cc-locked':'远期锁定'}[w.phase]||w.phase;
-    const phaseTag={csp:'purple',cc:'green','cc-exit':'yellow','cc-locked':'red'}[w.phase]||'dim';
-    d.innerHTML=`
-      <div class="wc-header">
-        <span class="wc-ticker">${w.ticker}</span>
-        ${statusTag(phaseLabel,phaseTag)}
-      </div>
-      <div class="wc-detail">${w.detail}</div>
-      <div class="wc-note" style="color:var(--dim)">${w.note}</div>
-    `;
-    container.appendChild(d);
-  });
-}
-</script>
+    <div class="container">
+        <div id="lock">
+            <h1>🐴 Theta Gang</h1>
+            <input type="password" id="pwd" placeholder="密码">
+            <button onclick="unlock()">解锁</button>
+            <div class="error" id="err"></div>
+        </div>
+        <div id="dashboard">
+            <h1>Theta Gang 战况</h1>
+            <div class="stats" id="stats"></div>
+            <div class="section">
+                <h2>Ongoing 战役</h2>
+                <div id="ongoing"></div>
+            </div>
+            <div class="section">
+                <h2>Realized 战绩</h2>
+                <div id="realized"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const ENC = __ENCRYPTED_DATA__;
+        const b64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+        
+        async function unlock() {
+            const pwd = document.getElementById('pwd').value;
+            try {
+                const enc = new TextEncoder();
+                const km = await crypto.subtle.importKey('raw', enc.encode(pwd), {name: 'PBKDF2'}, false, ['deriveKey']);
+                const key = await crypto.subtle.deriveKey({name: 'PBKDF2', salt: b64(ENC.salt), iterations: 100000, hash: 'SHA-256'}, km, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
+                const ct = b64(ENC.data), tag = b64(ENC.tag);
+                const combined = new Uint8Array(ct.length + tag.length);
+                combined.set(ct); combined.set(tag, ct.length);
+                const data = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64(ENC.iv)}, key, combined)));
+                
+                document.getElementById('lock').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+                
+                renderDashboard(data);
+            } catch(e) { 
+                document.getElementById('err').textContent = '密码错误'; 
+            }
+        }
+        
+        function renderDashboard(data) {
+            // Calculate stats
+            const allPos = [...data.ccPositions, ...data.cspPositions];
+            const totalPremium = allPos.reduce((sum, p) => sum + (p.premium || 0), 0);
+            const totalRealized = data.closedTrades.reduce((sum, t) => sum + (t.premium || 0), 0);
+            const avgProfit = allPos.length > 0 ? allPos.reduce((sum, p) => sum + (p.profit || 0), 0) / allPos.length : 0;
+            
+            // Render stats
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="label">持仓数量</div>
+                    <div class="value blue">${allPos.length}</div>
+                    <div class="sub">${data.ccPositions.length} CC · ${data.cspPositions.length} CSP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">持仓权利金</div>
+                    <div class="value cyan">$${totalPremium.toFixed(0)}</div>
+                    <div class="sub">平均盈利 ${avgProfit.toFixed(0)}%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">已实现收益</div>
+                    <div class="value green">$${totalRealized.toFixed(0)}</div>
+                    <div class="sub">${data.closedTrades.length} 笔交易</div>
+                </div>
+            `;
+            
+            // Render ongoing positions
+            const ong = document.getElementById('ongoing');
+            ong.innerHTML = '';
+            allPos.forEach(p => {
+                const profit = p.profit || 0;
+                const profitColor = profit >= 80 ? '#3fb950' : (profit >= 50 ? '#58a6ff' : (profit < 0 ? '#f85149' : '#6e7681'));
+                const profitWidth = Math.min(Math.max(profit, 0), 100);
+                
+                // Calculate DTE
+                const today = new Date();
+                const expiry = new Date(p.expiry);
+                const dte = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+                const dteColor = dte <= 3 ? '#f85149' : (dte <= 7 ? '#d29922' : '#3fb950');
+                const dteWidth = Math.min((dte / 45) * 100, 100);
+                
+                ong.innerHTML += `
+                    <div class="pos-card ${p.type}">
+                        <div class="pos-header">
+                            <span class="pos-ticker">${p.ticker} ${p.type} $${p.strike}</span>
+                            <span class="pos-premium">$${p.premium}</span>
+                        </div>
+                        <div class="pos-details">
+                            <span>${p.expiry}</span>
+                            <span>${dte} DTE</span>
+                        </div>
+                        <div class="progress-row">
+                            <div class="progress-label">
+                                <span>盈利进度</span>
+                                <span style="color: ${profitColor}; font-weight: 700;">${profit.toFixed(0)}%</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${profitWidth}%; background: ${profitColor};"></div>
+                            </div>
+                        </div>
+                        <div class="progress-row">
+                            <div class="progress-label">
+                                <span>时间衰减</span>
+                                <span style="color: ${dteColor};">${dte}d / 45d</span>
+                            </div>
+                            <div class="progress-bg">
+                                <div class="progress-fill" style="width: ${100 - dteWidth}%; background: ${dteColor};"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Render realized trades
+            const real = document.getElementById('realized');
+            real.innerHTML = '';
+            data.closedTrades.forEach(t => {
+                real.innerHTML += `
+                    <div class="trade-item">
+                        <span class="trade-ticker">${t.ticker} ${t.type || ''}</span>
+                        <span class="trade-profit">+$${t.premium}</span>
+                    </div>
+                `;
+            });
+        }
+        
+        document.getElementById('pwd').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') unlock();
+        });
+    </script>
 </body>
 </html>
