@@ -59,15 +59,15 @@
         .trade-profit { color: #3fb950; font-weight: 700; }
         
         /* Weekly chart */
-        .week-bar { margin-bottom: 16px; }
-        .week-label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
-        .week-label-left { color: #6e7681; }
-        .week-label-right { font-weight: 700; }
-        .bar-container { position: relative; height: 32px; background: #1e2733; border-radius: 6px; overflow: hidden; }
-        .bar-fill { height: 100%; background: linear-gradient(90deg, #3fb950, #39d2c0); border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 13px; font-weight: 700; color: white; transition: width 0.6s; }
-        .bar-fill.below-target { background: linear-gradient(90deg, #f85149, #d29922); }
-        .target-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(88,166,255,0.5); }
-        .target-label { position: absolute; left: 50%; top: -18px; font-size: 10px; color: #58a6ff; transform: translateX(-50%); }
+        .chart-container { background: #12171f; border: 1px solid #1e2733; border-radius: 12px; padding: 20px; }
+        .chart-area { position: relative; height: 200px; display: flex; align-items: flex-end; justify-content: space-around; border-bottom: 2px solid #1e2733; }
+        .chart-bar { flex: 1; max-width: 60px; margin: 0 4px; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .bar-column { width: 100%; background: linear-gradient(180deg, #3fb950, #39d2c0); border-radius: 6px 6px 0 0; transition: height 0.6s; position: relative; }
+        .bar-column.below { background: linear-gradient(180deg, #f85149, #d29922); }
+        .bar-value { position: absolute; top: -24px; left: 50%; transform: translateX(-50%); font-size: 12px; font-weight: 700; white-space: nowrap; }
+        .bar-label { margin-top: 8px; font-size: 11px; color: #6e7681; text-align: center; }
+        .target-line-h { position: absolute; left: 0; right: 0; height: 2px; background: #58a6ff; z-index: 1; }
+        .target-line-h::before { content: '$1000'; position: absolute; right: 0; top: -20px; font-size: 11px; color: #58a6ff; background: #12171f; padding: 2px 6px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -143,28 +143,29 @@
             
             // Render weekly chart
             const chart = document.getElementById('weekly-chart');
-            chart.innerHTML = '';
+            chart.innerHTML = '<div class="chart-container"><div class="chart-area" id="chart-bars"></div></div>';
+            const chartBars = document.getElementById('chart-bars');
+            
             const target = 1000;
             const maxAmount = Math.max(...weeks.map(w => weeklyData[w].total), target * 1.2);
+            const targetHeight = (target / maxAmount) * 100;
             
-            weeks.forEach((week, idx) => {
+            chartBars.innerHTML = `<div class="target-line-h" style="bottom: ${targetHeight}%;"></div>`;
+            
+            weeks.reverse().forEach((week, idx) => {
                 const w = weeklyData[week];
-                const pct = (w.total / maxAmount) * 100;
-                const targetPct = (target / maxAmount) * 100;
-                const isThisWeek = idx === 0;
+                const height = (w.total / maxAmount) * 100;
+                const isThisWeek = idx === weeks.length - 1;
                 const weekLabel = new Date(week).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-                const barClass = w.total >= target ? 'bar-fill' : 'bar-fill below-target';
+                const barClass = w.total >= target ? 'bar-column' : 'bar-column below';
+                const valueColor = w.total >= target ? '#3fb950' : '#f85149';
                 
-                chart.innerHTML += `
-                    <div class="week-bar">
-                        <div class="week-label">
-                            <span class="week-label-left">${weekLabel} ${isThisWeek ? '(本周)' : ''}</span>
-                            <span class="week-label-right" style="color: ${w.total >= target ? '#3fb950' : '#f85149'};">$${w.total}</span>
+                chartBars.innerHTML += `
+                    <div class="chart-bar">
+                        <div class="${barClass}" style="height: ${height}%;">
+                            <div class="bar-value" style="color: ${valueColor};">$${w.total}</div>
                         </div>
-                        <div class="bar-container">
-                            ${idx === 0 ? `<div class="target-line" style="left: ${targetPct}%;"></div><div class="target-label" style="left: ${targetPct}%;">目标 $${target}</div>` : ''}
-                            <div class="${barClass}" style="width: ${pct}%;"></div>
-                        </div>
+                        <div class="bar-label">${weekLabel}${isThisWeek ? '<br>(本周)' : ''}</div>
                     </div>
                 `;
             });
