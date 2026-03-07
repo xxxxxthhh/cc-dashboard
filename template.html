@@ -58,6 +58,18 @@
         .trade-item { display: flex; justify-content: space-between; padding: 10px 14px; background: #12171f; border: 1px solid #1e2733; border-radius: 8px; margin-bottom: 8px; font-size: 13px; }
         .trade-ticker { font-weight: 700; }
         .trade-profit { color: #3fb950; font-weight: 700; }
+        
+        /* Week group */
+        .week-group { margin-bottom: 16px; }
+        .week-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #12171f; border: 1px solid #1e2733; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+        .week-header:hover { background: #161b22; }
+        .week-title { font-size: 14px; font-weight: 700; color: #58a6ff; }
+        .week-summary { font-size: 12px; color: #6e7681; }
+        .week-total { font-size: 16px; font-weight: 700; color: #3fb950; }
+        .week-trades { margin-top: 8px; padding-left: 12px; display: none; }
+        .week-trades.expanded { display: block; }
+        .week-arrow { transition: transform 0.2s; }
+        .week-arrow.expanded { transform: rotate(90deg); }
     </style>
 </head>
 <body>
@@ -273,22 +285,72 @@
                 `;
             });
             
-            // Render realized trades
+            // Render realized trades by week
             const real = document.getElementById('realized');
             real.innerHTML = '';
+            
+            // Group by week
+            const tradesByWeek = {};
             data.closedTrades.forEach(t => {
-                const profitBadge = t.profit ? `<span style="font-size: 10px; background: rgba(63,185,80,0.15); color: #3fb950; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.profit}%</span>` : '';
-                const dateRange = t.openDate && t.closeDate ? `${t.openDate.slice(5)} → ${t.closeDate.slice(5)}` : (t.closeDate || '');
+                if (!t.closeDate) return;
+                const date = new Date(t.closeDate);
+                const weekStart = new Date(date);
+                weekStart.setDate(date.getDate() - date.getDay() + 1);
+                const weekKey = weekStart.toISOString().slice(0, 10);
+                if (!tradesByWeek[weekKey]) tradesByWeek[weekKey] = [];
+                tradesByWeek[weekKey].push(t);
+            });
+            
+            // Sort weeks descending
+            const weeks = Object.keys(tradesByWeek).sort().reverse();
+            
+            weeks.forEach((weekKey, idx) => {
+                const trades = tradesByWeek[weekKey];
+                const weekTotal = trades.reduce((sum, t) => sum + (t.premium || 0), 0);
+                const monday = new Date(weekKey);
+                const friday = new Date(monday);
+                friday.setDate(monday.getDate() + 4);
+                const fmt = (d) => `${d.getMonth() + 1}.${d.getDate()}`;
+                const weekLabel = `${fmt(monday)}-${fmt(friday)}`;
+                const weekId = `week-${idx}`;
+                
                 real.innerHTML += `
-                    <div class="trade-item">
-                        <div>
-                            <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>${profitBadge}
-                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${dateRange}</div>
+                    <div class="week-group">
+                        <div class="week-header" onclick="toggleWeek('${weekId}')">
+                            <div>
+                                <div class="week-title">
+                                    <span class="week-arrow" id="${weekId}-arrow">▶</span>
+                                    ${weekLabel}
+                                </div>
+                                <div class="week-summary">${trades.length} 笔交易</div>
+                            </div>
+                            <div class="week-total">+$${weekTotal.toFixed(0)}</div>
                         </div>
-                        <span class="trade-profit">+$${t.premium}</span>
+                        <div class="week-trades" id="${weekId}">
+                            ${trades.map(t => {
+                                const profitBadge = t.profit ? `<span style="font-size: 10px; background: rgba(63,185,80,0.15); color: #3fb950; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.profit}%</span>` : '';
+                                const dateRange = t.openDate && t.closeDate ? `${t.openDate.slice(5)} → ${t.closeDate.slice(5)}` : (t.closeDate || '');
+                                return `
+                                    <div class="trade-item">
+                                        <div>
+                                            <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>${profitBadge}
+                                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${dateRange}</div>
+                                        </div>
+                                        <span class="trade-profit">+$${t.premium}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
                     </div>
                 `;
             });
+        }
+        
+        function toggleWeek(weekId) {
+            const trades = document.getElementById(weekId);
+            const arrow = document.getElementById(weekId + '-arrow');
+            trades.classList.toggle('expanded');
+            arrow.classList.toggle('expanded');
         }
         
         document.getElementById('pwd').addEventListener('keypress', (e) => {
