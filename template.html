@@ -302,9 +302,9 @@
             });
             
             // Sort weeks descending
-            const weeks = Object.keys(tradesByWeek).sort().reverse();
+            const tradeWeeks = Object.keys(tradesByWeek).sort().reverse();
             
-            weeks.forEach((weekKey, idx) => {
+            tradeWeeks.forEach((weekKey, idx) => {
                 const trades = tradesByWeek[weekKey];
                 const weekTotal = trades.reduce((sum, t) => sum + (t.premium || 0), 0);
                 const monday = new Date(weekKey);
