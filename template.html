@@ -234,7 +234,7 @@
                 const today = new Date();
                 const expiry = new Date(p.expiry);
                 const dte = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                const dteColor = dte <= 3 ? '#f85149' : (dte <= 7 ? '#d29922' : '#3fb950';
+                const dteColor = dte <= 3 ? '#f85149' : (dte <= 7 ? '#d29922' : '#3fb950');
                 const dteWidth = Math.min((dte / 45) * 100, 100);
                 
                 // Deep ITM detection (CC with profit < -200%)
