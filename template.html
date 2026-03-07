@@ -181,11 +181,13 @@
             const real = document.getElementById('realized');
             real.innerHTML = '';
             data.closedTrades.forEach(t => {
+                const profitBadge = t.profit ? `<span style="font-size: 10px; background: rgba(63,185,80,0.15); color: #3fb950; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.profit}%</span>` : '';
+                const dateRange = t.openDate && t.closeDate ? `${t.openDate.slice(5)} → ${t.closeDate.slice(5)}` : (t.closeDate || '');
                 real.innerHTML += `
                     <div class="trade-item">
                         <div>
-                            <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>
-                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${t.closeDate || ''}</div>
+                            <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>${profitBadge}
+                            <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${dateRange}</div>
                         </div>
                         <span class="trade-profit">+$${t.premium}</span>
                     </div>
