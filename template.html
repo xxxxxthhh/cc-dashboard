@@ -328,7 +328,10 @@
                         </div>
                         <div class="week-trades" id="${weekId}">
                             ${trades.map(t => {
-                                const profitBadge = t.profit ? `<span style="font-size: 10px; background: rgba(63,185,80,0.15); color: #3fb950; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.profit}%</span>` : '';
+                                const actualProfit = t.profit < 0 ? t.profit : t.premium;
+                                const profitColor = actualProfit < 0 ? '#f85149' : '#3fb950';
+                                const profitSign = actualProfit < 0 ? '' : '+';
+                                const profitBadge = t.profit && t.profit > 0 ? `<span style="font-size: 10px; background: rgba(63,185,80,0.15); color: #3fb950; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">${t.profit}%</span>` : '';
                                 const dateRange = t.openDate && t.closeDate ? `${t.openDate.slice(5)} → ${t.closeDate.slice(5)}` : (t.closeDate || '');
                                 return `
                                     <div class="trade-item">
@@ -336,7 +339,7 @@
                                             <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>${profitBadge}
                                             <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${dateRange}</div>
                                         </div>
-                                        <span class="trade-profit">+$${t.premium}</span>
+                                        <span class="trade-profit" style="color: ${profitColor};">${profitSign}$${actualProfit}</span>
                                     </div>
                                 `;
                             }).join('')}
