@@ -306,7 +306,7 @@
             
             tradeWeeks.forEach((weekKey, idx) => {
                 const trades = tradesByWeek[weekKey];
-                const weekTotal = trades.reduce((sum, t) => sum + (t.premium || 0), 0);
+                const weekTotal = trades.reduce((sum, t) => sum + (t.profit !== undefined ? t.profit : t.premium || 0), 0);
                 const monday = new Date(weekKey);
                 const friday = new Date(monday);
                 friday.setDate(monday.getDate() + 4);
