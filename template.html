@@ -127,7 +127,7 @@
             // Calculate stats
             const allPos = [...data.ccPositions, ...data.cspPositions];
             const totalPremium = allPos.reduce((sum, p) => sum + (p.premium || 0), 0);
-            const totalRealized = data.closedTrades.reduce((sum, t) => sum + (t.premium || 0), 0);
+            const totalRealized = data.closedTrades.reduce((sum, t) => sum + (t.profit !== undefined ? t.profit : t.premium || 0), 0);
             const avgProfit = allPos.length > 0 ? allPos.reduce((sum, p) => sum + (p.profit || 0), 0) / allPos.length : 0;
             
             // Group trades by week
@@ -139,7 +139,7 @@
                 weekStart.setDate(date.getDate() - date.getDay() + 1); // Monday
                 const weekKey = weekStart.toISOString().slice(0, 10);
                 if (!weeklyData[weekKey]) weeklyData[weekKey] = { total: 0, count: 0 };
-                weeklyData[weekKey].total += t.premium || 0;
+                weeklyData[weekKey].total += (t.profit !== undefined ? t.profit : t.premium || 0);
                 weeklyData[weekKey].count += 1;
             });
             
