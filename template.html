@@ -158,7 +158,6 @@
                 return `${fmt(monday)}-${fmt(friday)}`;
             });
             const chartData = weeks.map(w => weeklyData[w].total);
-            const target = 1000;
             
             const ctx = document.getElementById('weekly-chart').getContext('2d');
             new Chart(ctx, {
@@ -168,8 +167,8 @@
                     datasets: [{
                         label: '周收益',
                         data: chartData,
-                        backgroundColor: chartData.map(v => v >= target ? 'rgba(63, 185, 80, 0.8)' : 'rgba(248, 81, 73, 0.8)'),
-                        borderColor: chartData.map(v => v >= target ? '#3fb950' : '#f85149'),
+                        backgroundColor: 'rgba(57, 210, 192, 0.8)',
+                        borderColor: '#39d2c0',
                         borderWidth: 2,
                         borderRadius: 6
                     }]
@@ -196,27 +195,7 @@
                             ticks: { color: '#6e7681' }
                         }
                     }
-                },
-                plugins: [{
-                    id: 'targetLine',
-                    afterDatasetsDraw: (chart) => {
-                        const ctx = chart.ctx;
-                        const yAxis = chart.scales.y;
-                        const y = yAxis.getPixelForValue(target);
-                        ctx.save();
-                        ctx.strokeStyle = '#58a6ff';
-                        ctx.lineWidth = 2;
-                        ctx.setLineDash([5, 5]);
-                        ctx.beginPath();
-                        ctx.moveTo(chart.chartArea.left, y);
-                        ctx.lineTo(chart.chartArea.right, y);
-                        ctx.stroke();
-                        ctx.fillStyle = '#58a6ff';
-                        ctx.font = '12px sans-serif';
-                        ctx.fillText('目标 $1000', chart.chartArea.right - 70, y - 5);
-                        ctx.restore();
-                    }
-                }]
+                }
             });
             
             // Render stats
