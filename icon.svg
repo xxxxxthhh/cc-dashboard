@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1a2f4a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="theta" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#39d2c0;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#58a6ff;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" rx="40" fill="url(#bg)"/>
+  
+  <!-- Theta symbol (θ) -->
+  <g transform="translate(100, 100)">
+    <!-- Outer ellipse -->
+    <ellipse cx="0" cy="0" rx="45" ry="60" fill="none" stroke="url(#theta)" stroke-width="16" stroke-linecap="round"/>
+    <!-- Horizontal bar -->
+    <line x1="-50" y1="0" x2="50" y2="0" stroke="url(#theta)" stroke-width="16" stroke-linecap="round"/>
+  </g>
+</svg>
