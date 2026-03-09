@@ -129,7 +129,10 @@
         
         function renderDashboard(data) {
             // Calculate stats
-            const allPos = [...data.ccPositions, ...data.cspPositions];
+            const allPos = [
+                ...data.ccPositions.map(p => ({...p, type: 'CC'})),
+                ...data.cspPositions.map(p => ({...p, type: 'CSP'}))
+            ];
             const totalPremium = allPos.reduce((sum, p) => sum + (p.premium || 0), 0);
             const totalRealized = data.closedTrades.reduce((sum, t) => {
                 // 如果有负 profit，说明是亏损交易，用 profit；否则用 premium
