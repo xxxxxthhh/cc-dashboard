@@ -71,6 +71,9 @@
         .week-trades.expanded { display: block; }
         .week-arrow { transition: transform 0.2s; }
         .week-arrow.expanded { transform: rotate(90deg); }
+        .week-badge { display: inline-flex; align-items: center; font-size: 10px; padding: 2px 6px; border-radius: 999px; margin-left: 8px; vertical-align: middle; }
+        .week-badge.ongoing { background: rgba(188, 140, 255, 0.16); color: #bc8cff; }
+        .week-badge.closed { background: rgba(57, 210, 192, 0.16); color: #39d2c0; }
     </style>
 </head>
 <body>
@@ -136,28 +139,51 @@
             
             // Group trades by week
             const weeklyData = {};
-            data.closedTrades.forEach(t => {
-                if (!t.closeDate) return;
-                const date = new Date(t.closeDate);
+            const toWeekKey = (dateStr) => {
+                const date = new Date(dateStr);
                 const weekStart = new Date(date);
                 weekStart.setDate(date.getDate() - date.getDay() + 1); // Monday
-                const weekKey = weekStart.toISOString().slice(0, 10);
-                if (!weeklyData[weekKey]) weeklyData[weekKey] = { total: 0, count: 0 };
-                weeklyData[weekKey].total += (t.profit < 0 ? t.profit : t.premium || 0);
-                weeklyData[weekKey].count += 1;
+                return weekStart.toISOString().slice(0, 10);
+            };
+            const ensureWeek = (weekKey) => {
+                if (!weeklyData[weekKey]) weeklyData[weekKey] = { total: 0, count: 0, ongoing: false, ongoingPremium: 0, realized: 0 };
+                return weeklyData[weekKey];
+            };
+
+            data.closedTrades.forEach(t => {
+                if (!t.closeDate) return;
+                const weekKey = toWeekKey(t.closeDate);
+                const bucket = ensureWeek(weekKey);
+                const realized = (t.profit < 0 ? t.profit : t.premium || 0);
+                bucket.total += realized;
+                bucket.realized += realized;
+                bucket.count += 1;
+            });
+
+            allPos.forEach(p => {
+                if (!p.sellDate) return;
+                const weekKey = toWeekKey(p.sellDate);
+                const bucket = ensureWeek(weekKey);
+                bucket.total += (p.premium || 0);
+                bucket.ongoingPremium += (p.premium || 0);
+                bucket.count += 1;
+                bucket.ongoing = true;
             });
             
-            const weeks = Object.keys(weeklyData).sort().reverse().slice(0, 6); // Last 6 weeks
+            const weeks = Object.keys(weeklyData).sort().reverse().slice(0, 6); // Last 6 weeks incl. ongoing
+            const orderedWeeks = weeks.reverse();
             
             // Render weekly chart with Chart.js
-            const chartLabels = weeks.reverse().map(w => {
+            const chartLabels = orderedWeeks.map(w => {
                 const monday = new Date(w);
                 const friday = new Date(monday);
                 friday.setDate(monday.getDate() + 4);
                 const fmt = (d) => `${d.getMonth() + 1}.${d.getDate()}`;
                 return `${fmt(monday)}-${fmt(friday)}`;
             });
-            const chartData = weeks.map(w => weeklyData[w].total);
+            const chartData = orderedWeeks.map(w => weeklyData[w].total);
+            const chartColors = orderedWeeks.map(w => weeklyData[w].ongoing ? 'rgba(188, 140, 255, 0.82)' : 'rgba(57, 210, 192, 0.8)');
+            const chartBorders = orderedWeeks.map(w => weeklyData[w].ongoing ? '#bc8cff' : '#39d2c0');
             const target = 1000;
             
             const ctx = document.getElementById('weekly-chart').getContext('2d');
@@ -168,8 +194,8 @@
                     datasets: [{
                         label: '周收益',
                         data: chartData,
-                        backgroundColor: 'rgba(57, 210, 192, 0.8)',
-                        borderColor: '#39d2c0',
+                        backgroundColor: chartColors,
+                        borderColor: chartBorders,
                         borderWidth: 2,
                         borderRadius: 6
                     }]
@@ -181,7 +207,14 @@
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
-                                label: (ctx) => `$${ctx.parsed.y}`
+                                label: (ctx) => {
+                                    const week = orderedWeeks[ctx.dataIndex];
+                                    const bucket = weeklyData[week];
+                                    if (bucket.ongoing) {
+                                        return [`进行中合计: $${ctx.parsed.y}`, `已实现: $${bucket.realized}`, `在途权利金: $${bucket.ongoingPremium}`];
+                                    }
+                                    return `$${ctx.parsed.y}`;
+                                }
                             }
                         }
                     },
@@ -306,6 +339,7 @@
             
             tradeWeeks.forEach((weekKey, idx) => {
                 const trades = tradesByWeek[weekKey];
+                const bucket = weeklyData[weekKey] || { total: 0, ongoing: false, ongoingPremium: 0 };
                 const weekTotal = trades.reduce((sum, t) => sum + (t.profit < 0 ? t.profit : t.premium || 0), 0);
                 const monday = new Date(weekKey);
                 const friday = new Date(monday);
@@ -313,6 +347,8 @@
                 const fmt = (d) => `${d.getMonth() + 1}.${d.getDate()}`;
                 const weekLabel = `${fmt(monday)}-${fmt(friday)}`;
                 const weekId = `week-${idx}`;
+                const badge = bucket.ongoing ? `<span class="week-badge ongoing">进行中</span>` : `<span class="week-badge closed">已结束</span>`;
+                const openTrades = allPos.filter(p => p.sellDate && toWeekKey(p.sellDate) === weekKey);
                 
                 real.innerHTML += `
                     <div class="week-group">
@@ -320,13 +356,31 @@
                             <div>
                                 <div class="week-title">
                                     <span class="week-arrow" id="${weekId}-arrow">▶</span>
-                                    ${weekLabel}
+                                    ${weekLabel}${badge}
                                 </div>
-                                <div class="week-summary">${trades.length} 笔交易</div>
+                                <div class="week-summary">${trades.length} 笔已结束${bucket.ongoing ? ` · ${openTrades.length} 笔进行中` : ''}</div>
                             </div>
-                            <div class="week-total">+$${weekTotal.toFixed(0)}</div>
+                            <div class="week-total">${weekTotal >= 0 ? '+' : ''}$${weekTotal.toFixed(0)}</div>
                         </div>
                         <div class="week-trades" id="${weekId}">
+                            ${bucket.ongoing ? `
+                                <div class="trade-item" style="border-color: #5b3a88; background: rgba(188, 140, 255, 0.08);">
+                                    <div>
+                                        <span class="trade-ticker" style="color: #bc8cff;">进行中权利金</span>
+                                        <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">本周已开未平仓位</div>
+                                    </div>
+                                    <span class="trade-profit" style="color: #bc8cff;">+$${bucket.ongoingPremium.toFixed(0)}</span>
+                                </div>
+                            ` : ''}
+                            ${openTrades.map(t => `
+                                <div class="trade-item" style="border-color: #5b3a88; background: rgba(188, 140, 255, 0.05);">
+                                    <div>
+                                        <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>
+                                        <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${(t.sellDate || '').slice(5)} → 持仓中</div>
+                                    </div>
+                                    <span class="trade-profit" style="color: #bc8cff;">+$${t.premium || 0}</span>
+                                </div>
+                            `).join('')}
                             ${trades.map(t => {
                                 const actualProfit = t.profit < 0 ? t.profit : t.premium;
                                 const profitColor = actualProfit < 0 ? '#f85149' : '#3fb950';
