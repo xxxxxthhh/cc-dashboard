@@ -345,8 +345,8 @@
             
             tradeWeeks.forEach((weekKey, idx) => {
                 const trades = tradesByWeek[weekKey];
-                const bucket = weeklyData[weekKey] || { total: 0, ongoing: false, ongoingPremium: 0 };
-                const weekTotal = trades.reduce((sum, t) => sum + (t.profit < 0 ? t.profit : t.premium || 0), 0);
+                const bucket = weeklyData[weekKey] || { total: 0, ongoing: false, ongoingPremium: 0, realized: 0 };
+                const weekTotal = bucket.total;
                 const monday = new Date(weekKey);
                 const friday = new Date(monday);
                 friday.setDate(monday.getDate() + 4);
@@ -364,7 +364,7 @@
                                     <span class="week-arrow" id="${weekId}-arrow">▶</span>
                                     ${weekLabel}${badge}
                                 </div>
-                                <div class="week-summary">${trades.length} 笔已结束${bucket.ongoing ? ` · ${openTrades.length} 笔进行中` : ''}</div>
+                                <div class="week-summary">已实现 $${bucket.realized.toFixed(0)}${bucket.ongoing ? ` · 在途 $${bucket.ongoingPremium.toFixed(0)} · ${openTrades.length} 笔进行中` : ` · ${trades.length} 笔已结束`}</div>
                             </div>
                             <div class="week-total">${weekTotal >= 0 ? '+' : ''}$${weekTotal.toFixed(0)}</div>
                         </div>
