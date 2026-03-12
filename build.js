@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const PASSWORD = '1029';
 
@@ -26,6 +27,45 @@ try {
   console.error('\n❌ Validation failed before build');
   throw err;
 }
+
+function enrichWithLiveQuotes(data) {
+  const tickers = Array.from(new Set([
+    ...(data.ccPositions || []).map(p => p.ticker),
+    ...(data.cspPositions || []).map(p => p.ticker),
+  ].filter(Boolean)));
+
+  if (!tickers.length) return;
+
+  try {
+    const quoteScript = path.join(__dirname, '..', 'scripts', 'quote.py');
+    const raw = execFileSync('python3', [quoteScript, '--json', ...tickers], {
+      cwd: __dirname,
+      encoding: 'utf8',
+      timeout: 20000,
+    });
+    const quotes = JSON.parse(raw);
+    const byTicker = Object.fromEntries(quotes.filter(q => !q.error).map(q => [q.ticker, q]));
+
+    const applyQuote = (p) => {
+      const q = byTicker[p.ticker];
+      if (!q) return p;
+      return {
+        ...p,
+        currentPrice: q.price,
+        prevClose: q.prev_close,
+      };
+    };
+
+    data.ccPositions = (data.ccPositions || []).map(applyQuote);
+    data.cspPositions = (data.cspPositions || []).map(applyQuote);
+    data.quoteUpdatedAt = new Date().toISOString();
+    console.log('💹 Live quotes loaded for:', Object.keys(byTicker).join(', '));
+  } catch (err) {
+    console.warn('⚠️ Failed to load live quotes:', err.message);
+  }
+}
+
+enrichWithLiveQuotes(DATA);
 
 // Optional decision data (alerts/candidates), also sensitive
 const decisionPath = path.join(__dirname, 'decision_data.json');

@@ -138,7 +138,6 @@
                 // 如果有负 profit，说明是亏损交易，用 profit；否则用 premium
                 return sum + (t.profit < 0 ? t.profit : t.premium || 0);
             }, 0);
-            const avgProfit = allPos.length > 0 ? allPos.reduce((sum, p) => sum + (p.profit || 0), 0) / allPos.length : 0;
             
             // Group trades by week
             const weeklyData = {};
@@ -263,7 +262,7 @@
                 <div class="stat-card">
                     <div class="label">持仓权利金</div>
                     <div class="value cyan">$${totalPremium.toFixed(0)}</div>
-                    <div class="sub">平均盈利 ${avgProfit.toFixed(0)}%</div>
+                    <div class="sub">报价 ${data.quoteUpdatedAt ? new Date(data.quoteUpdatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '未更新'}</div>
                 </div>
                 <div class="stat-card">
                     <div class="label">已实现收益</div>
@@ -276,24 +275,46 @@
             const ong = document.getElementById('ongoing');
             ong.innerHTML = '';
             allPos.forEach(p => {
-                const profit = p.profit || 0;
-                const profitColor = profit >= 80 ? '#3fb950' : (profit >= 50 ? '#58a6ff' : (profit < 0 ? '#f85149' : '#6e7681'));
-                const profitWidth = Math.min(Math.max(profit, 0), 100);
-                
                 // Calculate DTE
                 const today = new Date();
                 const expiry = new Date(p.expiry);
                 const dte = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
-                const dteColor = dte <= 3 ? '#f85149' : (dte <= 7 ? '#d29922' : '#3fb950');
-                // 动态计算最大 DTE（开仓时的 DTE）
-                const openDate = new Date(p.sellDate);
-                const maxDte = Math.ceil((expiry - openDate) / (1000 * 60 * 60 * 24));
-                const dteWidth = Math.min((dte / maxDte) * 100, 100);
-                
-                // Deep ITM detection (CC with profit < -200%)
-                const isDeepITM = p.type === 'CC' && profit < -200;
-                const cardBg = isDeepITM ? 'background: rgba(217, 130, 43, 0.15);' : '';
-                
+                const dteColor = dte <= 1 ? '#f85149' : (dte <= 3 ? '#d29922' : '#3fb950');
+                const openDate = p.sellDate ? new Date(p.sellDate) : null;
+                const maxDte = openDate && !Number.isNaN(openDate.getTime()) ? Math.max(1, Math.ceil((expiry - openDate) / (1000 * 60 * 60 * 24))) : null;
+                const timeProgress = maxDte ? Math.min(Math.max(((maxDte - dte) / maxDte) * 100, 0), 100) : null;
+
+                const currentPrice = typeof p.currentPrice === 'number' ? p.currentPrice : null;
+                const diff = currentPrice !== null ? currentPrice - p.strike : null;
+                const diffPct = currentPrice !== null && p.strike ? (diff / p.strike) * 100 : null;
+                const isCC = p.type === 'CC';
+                const priceLabel = currentPrice === null
+                  ? '当前价未更新'
+                  : (isCC
+                      ? (diff >= 0 ? `已穿价 +$${diff.toFixed(2)} (+${diffPct.toFixed(2)}%)` : `距离行权价 -$${Math.abs(diff).toFixed(2)} (-${Math.abs(diffPct).toFixed(2)}%)`)
+                      : (diff >= 0 ? `安全垫 +$${diff.toFixed(2)} (+${diffPct.toFixed(2)}%)` : `跌破行权价 -$${Math.abs(diff).toFixed(2)} (-${Math.abs(diffPct).toFixed(2)}%)`));
+
+                let priceColor = '#6e7681';
+                if (currentPrice !== null) {
+                  if (isCC) {
+                    priceColor = diff >= 0 ? '#f85149' : (Math.abs(diffPct) <= 2 ? '#d29922' : '#3fb950');
+                  } else {
+                    priceColor = diff < 0 ? '#f85149' : (diffPct <= 2 ? '#d29922' : '#3fb950');
+                  }
+                }
+
+                let priceWidth = 0;
+                if (currentPrice !== null) {
+                  const clipped = Math.min(Math.abs(diffPct || 0), 10);
+                  priceWidth = (clipped / 10) * 100;
+                }
+                const priceBarColor = currentPrice === null ? '#6e7681' : priceColor;
+                const isDeepITM = isCC && currentPrice !== null && diff > 0;
+                const cardBg = isDeepITM && p.ticker === 'CRCL' ? 'background: rgba(217, 130, 43, 0.15);' : '';
+                const timeText = maxDte ? `${dte}d / ${maxDte}d` : `${dte} DTE`;
+                const priceMeta = currentPrice !== null ? `现价 $${currentPrice.toFixed(2)} · Strike $${p.strike}` : `Strike $${p.strike}`;
+                const timeLabel = dte <= 1 ? '到期倒计时' : '时间进度';
+
                 ong.innerHTML += `
                     <div class="pos-card ${p.type}" style="${cardBg}">
                         <div class="pos-header">
@@ -306,20 +327,23 @@
                         </div>
                         <div class="progress-row">
                             <div class="progress-label">
-                                <span>盈利进度</span>
-                                <span style="color: ${profitColor}; font-weight: 700;">${profit.toFixed(0)}%</span>
+                                <span>价格位置</span>
+                                <span style="color: ${priceColor}; font-weight: 700;">${priceLabel}</span>
+                            </div>
+                            <div class="progress-label" style="margin-top: -2px; margin-bottom: 6px;">
+                                <span>${priceMeta}</span>
                             </div>
                             <div class="progress-bg">
-                                <div class="progress-fill" style="width: ${profitWidth}%; background: ${profitColor};"></div>
+                                <div class="progress-fill" style="width: ${priceWidth}%; background: ${priceBarColor};"></div>
                             </div>
                         </div>
                         <div class="progress-row">
                             <div class="progress-label">
-                                <span>时间衰减</span>
-                                <span style="color: ${dteColor};">${dte}d / ${maxDte}d</span>
+                                <span>${timeLabel}</span>
+                                <span style="color: ${dteColor};">${timeText}</span>
                             </div>
                             <div class="progress-bg">
-                                <div class="progress-fill" style="width: ${100 - dteWidth}%; background: ${dteColor};"></div>
+                                <div class="progress-fill" style="width: ${timeProgress ?? 0}%; background: ${dteColor};"></div>
                             </div>
                         </div>
                     </div>

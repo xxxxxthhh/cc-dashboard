@@ -15,6 +15,7 @@
 - **不要**把“已实现 / 在途 / 本周总收入”混为一谈
 - 周收益一律按 **到期周** 归属，不按开仓周；长周期单（如远期 CC）只在它到期那周计入
 - 数据不对，优先修 `portfolio_data.json`，不是先改前端展示逻辑
+- build 时会自动抓取当前价，ongoing 卡片展示 **当前价 vs strike**，不是虚假的“盈利进度 0%"
 - `portfolio_data.json` 是私有文件，默认不提交 git
 - 发布到 GitHub Pages 的是 `index.html`
 
