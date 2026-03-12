@@ -20,6 +20,13 @@ const DATA = loadJsonOrThrow(
   `\nCreate it locally (do NOT commit). You can generate/sync it via sync_portfolio.py or your pipeline.`
 );
 
+try {
+  require('./validate_portfolio');
+} catch (err) {
+  console.error('\n❌ Validation failed before build');
+  throw err;
+}
+
 // Optional decision data (alerts/candidates), also sensitive
 const decisionPath = path.join(__dirname, 'decision_data.json');
 if (fs.existsSync(decisionPath)) {
