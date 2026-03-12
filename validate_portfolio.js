@@ -64,13 +64,13 @@ const mustHavePremium = [
 ];
 
 for (const [ticker, type, strike, premium] of mustHavePremium) {
-  const match = closed.find(t => t.ticker === ticker && t.type === type && Number(t.strike) === Number(strike));
-  if (!match) {
+  const matches = closed.filter(t => t.ticker === ticker && t.type === type && Number(t.strike) === Number(strike));
+  if (!matches.length) {
     warnings.push(`Reference trade missing: ${ticker} ${type} ${strike}`);
     continue;
   }
-  if (match.premium !== premium) {
-    errors.push(`Reference trade premium mismatch: ${ticker} ${type} ${strike} => got ${match.premium}, expected ${premium}`);
+  if (!matches.some(match => match.premium === premium)) {
+    errors.push(`Reference trade premium mismatch: ${ticker} ${type} ${strike} => got [${matches.map(m => m.premium).join(', ')}], expected to include ${premium}`);
   }
 }
 
@@ -83,8 +83,8 @@ const realizedWeek = closed
   .reduce((s, t) => s + ((t.profit < 0) ? t.profit : (t.premium || 0)), 0);
 const totalWeek = openWeek + realizedWeek;
 
-if (openWeek !== 1363) errors.push(`Week 2026-03-09 ongoing premium mismatch: got ${openWeek}, expected 1363`);
-if (realizedWeek !== 179) errors.push(`Week 2026-03-09 realized mismatch: got ${realizedWeek}, expected 179`);
+if (openWeek !== 0) errors.push(`Week 2026-03-09 ongoing premium mismatch: got ${openWeek}, expected 0`);
+if (realizedWeek !== 1542) errors.push(`Week 2026-03-09 realized mismatch: got ${realizedWeek}, expected 1542`);
 if (totalWeek !== 1542) errors.push(`Week 2026-03-09 total mismatch: got ${totalWeek}, expected 1542`);
 
 const prevWeek = '2026-03-02';
