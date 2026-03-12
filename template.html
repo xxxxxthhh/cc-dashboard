@@ -148,14 +148,16 @@
                 weekStart.setDate(date.getDate() - date.getDay() + 1); // Monday
                 return weekStart.toISOString().slice(0, 10);
             };
+            const getPositionWeekKey = (p) => p.expiry ? toWeekKey(p.expiry) : null;
+            const getClosedTradeWeekKey = (t) => t.expiry ? toWeekKey(t.expiry) : (t.closeDate ? toWeekKey(t.closeDate) : null);
             const ensureWeek = (weekKey) => {
                 if (!weeklyData[weekKey]) weeklyData[weekKey] = { total: 0, count: 0, ongoing: false, ongoingPremium: 0, realized: 0 };
                 return weeklyData[weekKey];
             };
 
             data.closedTrades.forEach(t => {
-                if (!t.closeDate) return;
-                const weekKey = toWeekKey(t.closeDate);
+                const weekKey = getClosedTradeWeekKey(t);
+                if (!weekKey) return;
                 const bucket = ensureWeek(weekKey);
                 const realized = (t.profit < 0 ? t.profit : t.premium || 0);
                 bucket.total += realized;
@@ -164,8 +166,8 @@
             });
 
             allPos.forEach(p => {
-                if (!p.sellDate) return;
-                const weekKey = toWeekKey(p.sellDate);
+                const weekKey = getPositionWeekKey(p);
+                if (!weekKey) return;
                 const bucket = ensureWeek(weekKey);
                 bucket.total += (p.premium || 0);
                 bucket.ongoingPremium += (p.premium || 0);
@@ -331,11 +333,8 @@
             // Group by week
             const tradesByWeek = {};
             data.closedTrades.forEach(t => {
-                if (!t.closeDate) return;
-                const date = new Date(t.closeDate);
-                const weekStart = new Date(date);
-                weekStart.setDate(date.getDate() - date.getDay() + 1);
-                const weekKey = weekStart.toISOString().slice(0, 10);
+                const weekKey = getClosedTradeWeekKey(t);
+                if (!weekKey) return;
                 if (!tradesByWeek[weekKey]) tradesByWeek[weekKey] = [];
                 tradesByWeek[weekKey].push(t);
             });
@@ -353,8 +352,8 @@
                 const fmt = (d) => `${d.getMonth() + 1}.${d.getDate()}`;
                 const weekLabel = `${fmt(monday)}-${fmt(friday)}`;
                 const weekId = `week-${idx}`;
-                const badge = bucket.ongoing ? `<span class="week-badge ongoing">进行中</span>` : `<span class="week-badge closed">已结束</span>`;
-                const openTrades = allPos.filter(p => p.sellDate && toWeekKey(p.sellDate) === weekKey);
+                const badge = bucket.ongoing ? `<span class="week-badge ongoing">到期中</span>` : `<span class="week-badge closed">已结束</span>`;
+                const openTrades = allPos.filter(p => getPositionWeekKey(p) === weekKey);
                 
                 real.innerHTML += `
                     <div class="week-group">
@@ -382,7 +381,7 @@
                                 <div class="trade-item" style="border-color: #5b3a88; background: rgba(188, 140, 255, 0.05);">
                                     <div>
                                         <span class="trade-ticker">${t.ticker} ${t.type || ''} $${t.strike}</span>
-                                        <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">${(t.sellDate || '').slice(5)} → 持仓中</div>
+                                        <div style="font-size: 11px; color: #6e7681; margin-top: 2px;">到期 ${t.expiry || ''} · 持仓中</div>
                                     </div>
                                     <span class="trade-profit" style="color: #bc8cff;">+$${t.premium || 0}</span>
                                 </div>
